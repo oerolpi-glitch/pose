@@ -62,7 +62,7 @@ Pose/
 
 **Shooting modes** — same camera screen, two modes:
 - *pose me*: user picks target pose first; ghost overlay + live similarity score; auto-capture when score ≥ 85% held for 1s.
-- *guide me*: no target pose; live coaching hints derived from limb analysis (e.g., "chin up", "drop shoulder") + framing suggestions.
+- *guide me*: no target pose; live coaching hints from standalone posture heuristics computed directly on the 19 keypoints (shoulder-line tilt, head tilt, body symmetry, arms-glued-to-torso detection) plus framing suggestions (subject centering, headroom). Implemented as `PostureHeuristics` in PoseKit — separate from target-based `PoseScorer`.
 
 ## 3. Camera & Vision Pipeline
 

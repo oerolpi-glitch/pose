@@ -8,7 +8,7 @@
 
 | Question | Decision |
 |---|---|
-| Build setup | User has Mac + iPhone. Code authored on Windows, built/tested on Mac. |
+| Build setup | User has iPhone now; Mac arrives in days. Code authored on Windows. Interim: PoseKit tested locally via Swift-for-Windows toolchain; app compile-checked on GitHub Actions macOS runner. Mac arrival → full local Xcode + on-device loop. |
 | Scaffolding | XcodeGen (`project.yml`). On Mac: `brew install xcodegen && xcodegen && open Pose.xcodeproj`. |
 | Paywall stack | Superwall SDK (SPM). Hard, unskippable paywall after onboarding. |
 | Pose content | Keypoints-as-source-of-truth: poses authored as JSON keypoint files (19 joints). Mannequin graphic rendered from the same keypoints via SwiftUI Canvas. No external art assets. |
@@ -74,7 +74,8 @@ Pose/
 
 ## 4. PoseKit Math
 
-- `ProcrustesAnalyzer`: input two `[SIMD2<Float>]` (19 each). Centroid-subtract → divide by centroid size (√Σ‖p−c‖²) → optimal rotation via 2×2 SVD (LAPACK via Accelerate) → Procrustes distance d² = Σ‖x − z‖². Score = `1 − d²/2` clamped 0…1 (d² bounded [0,2] for unit-normalized shapes). Missing joints: comparison over intersection of confident joints; minimum 8 required, else `nil` score.
+- `ProcrustesAnalyzer`: input two `[SIMD2<Float>]` (19 each). Centroid-subtract → divide by centroid size (√Σ‖p−c‖²) → optimal rotation via **closed-form 2D solution** (for 2D point sets the optimal rotation angle is `atan2(Σ(x×z), Σ(x·z))` — algebraically equivalent to the 2×2 SVD/Kabsch result, no LAPACK needed) → Procrustes distance d² = Σ‖x − z‖². Score = `1 − d²/2` clamped 0…1 (d² bounded [0,2] for unit-normalized shapes). Missing joints: comparison over intersection of confident joints; minimum 8 required, else `nil` score.
+- **No Accelerate dependency.** Pure Swift + `simd`-style value math → PoseKit compiles and tests on the Swift-for-Windows toolchain (Accelerate is Apple-platform-only; closed-form beats LAPACK for 19-point 2D anyway). Deviation from original prompt's "use Accelerate" noted and accepted: requirement behind it was 60 FPS, which closed-form exceeds by orders of magnitude.
 - `LimbSimilarity`: 8 bone vectors (upper/lower arms ×2, torso, neck, upper/lower legs ×2). Cosine similarity per bone; worst-offender bone drives coaching hint text.
 - `PoseScorer`: final = 0.7 × Procrustes + 0.3 × mean cosine. Pure functions, preallocated buffers, no allocation in hot path. 60 FPS capable.
 - Unit tests: identity = 1.0; translated = 1.0; scaled = 1.0; rotated = 1.0; mirrored/opposite low; known-distance fixtures.
@@ -96,10 +97,11 @@ Config placeholders (user supplies): Superwall API key; App Store Connect produc
 
 ## 6. Testing & Verification
 
-- PoseKit: full unit test suite via `swift test` (no simulator).
-- ViewModels: unit tests with mock services (protocol injection).
-- Camera/Vision: manual on-device checklist — 30 FPS (Xcode gauges), thermal behavior, front/rear switching.
-- Workflow: code authored here; user runs `xcodegen`, builds on Mac, reports errors back; iterate.
+- PoseKit: full unit test suite via `swift test` — runs on Windows (local, immediate) and macOS CI.
+- ViewModels: unit tests with mock services (protocol injection) — run on macOS (import SwiftUI/Combine).
+- CI: GitHub Actions macOS runner — `xcodegen` + `xcodebuild build` on every push; catches compile errors against real iOS SDK before Mac arrives. PoseKit `swift test` job runs too.
+- Camera/Vision: manual on-device checklist once Mac arrives — 30 FPS (Xcode gauges), thermal behavior, front/rear switching.
+- Workflow phase 1 (pre-Mac): author everything, PoseKit green on Windows, app compile green in CI. Phase 2 (Mac): `xcodegen`, build, on-device tuning.
 
 ## Out of Scope (v1)
 

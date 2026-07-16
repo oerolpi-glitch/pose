@@ -76,7 +76,7 @@ Pose/
 
 - `ProcrustesAnalyzer`: input two `[SIMD2<Float>]` (19 each). Centroid-subtract → divide by centroid size (√Σ‖p−c‖²) → optimal rotation via **closed-form 2D solution** (for 2D point sets the optimal rotation angle is `atan2(Σ(x×z), Σ(x·z))` — algebraically equivalent to the 2×2 SVD/Kabsch result, no LAPACK needed) → Procrustes distance d² = Σ‖x − z‖². Score = `1 − d²/2` clamped 0…1 (d² bounded [0,2] for unit-normalized shapes). Missing joints: comparison over intersection of confident joints; minimum 8 required, else `nil` score.
 - **No Accelerate dependency.** Pure Swift + `simd`-style value math → PoseKit compiles and tests on the Swift-for-Windows toolchain (Accelerate is Apple-platform-only; closed-form beats LAPACK for 19-point 2D anyway). Deviation from original prompt's "use Accelerate" noted and accepted: requirement behind it was 60 FPS, which closed-form exceeds by orders of magnitude.
-- `LimbSimilarity`: 8 bone vectors (upper/lower arms ×2, torso, neck, upper/lower legs ×2). Cosine similarity per bone; worst-offender bone drives coaching hint text.
+- `LimbSimilarity`: 10 bone vectors (upper arm ×2, forearm ×2, thigh ×2, shin ×2, torso, neck). Cosine similarity per bone; worst-offender bone drives coaching hint text.
 - `PoseScorer`: final = 0.7 × Procrustes + 0.3 × mean cosine. Pure functions, preallocated buffers, no allocation in hot path. 60 FPS capable.
 - Unit tests: identity = 1.0; translated = 1.0; scaled = 1.0; rotated = 1.0; mirrored/opposite low; known-distance fixtures.
 

@@ -47,10 +47,7 @@ final class CameraService: NSObject, CameraServicing {
                 if session.canAddOutput(videoOutput) { session.addOutput(videoOutput) }
                 if session.canAddOutput(photoOutput) { session.addOutput(photoOutput) }
 
-                if let conn = videoOutput.connection(with: .video),
-                   conn.isVideoRotationAngleSupported(90) {
-                    conn.videoRotationAngle = 90 // portrait buffers
-                }
+                configureVideoConnection()
                 session.commitConfiguration()
                 cont.resume(returning: true)
             }
@@ -85,11 +82,25 @@ final class CameraService: NSObject, CameraServicing {
             } else {
                 session.addInput(old)
             }
-            if let conn = videoOutput.connection(with: .video),
-               conn.isVideoRotationAngleSupported(90) {
-                conn.videoRotationAngle = 90
-            }
+            configureVideoConnection()
             session.commitConfiguration()
+        }
+    }
+
+    /// Pins the video-data-output connection to portrait, unmirrored buffers.
+    /// Vision must always see raw sensor orientation: mirroring for the front
+    /// camera is applied once, by CoordinateMapper, so that the skeleton and the
+    /// score agree with what the preview layer shows. Leaving AVFoundation's
+    /// automatic mirroring on would apply it twice.
+    /// Must be called inside a session configuration block on `sessionQueue`.
+    private func configureVideoConnection() {
+        guard let conn = videoOutput.connection(with: .video) else { return }
+        if conn.isVideoRotationAngleSupported(90) {
+            conn.videoRotationAngle = 90
+        }
+        if conn.isVideoMirroringSupported {
+            conn.automaticallyAdjustsVideoMirroring = false
+            conn.isVideoMirrored = false
         }
     }
 

@@ -8,14 +8,18 @@ struct SearchField: View {
         HStack(spacing: Theme.Spacing.s) {
             Image(systemName: "magnifyingglass")
                 .font(Theme.Icon.inline())
-                .foregroundStyle(Theme.Colors.subtitle)
+                .foregroundStyle(Theme.Colors.secondary)
             TextField(placeholder, text: $text)
                 .font(Theme.Typography.body)
-                .foregroundStyle(Theme.Colors.primaryDark)
-                .tint(Theme.Colors.primaryDark)
+                .foregroundStyle(Theme.Colors.foreground)
+                .tint(Theme.Colors.accent)
                 .autocorrectionDisabled()
         }
         .padding(Theme.Spacing.m)
-        .background(RoundedRectangle(cornerRadius: Theme.Radius.card).fill(Theme.Colors.surface))
+        .background(
+            RoundedRectangle(cornerRadius: Theme.Radius.card).fill(Theme.Colors.surface)
+                .overlay(RoundedRectangle(cornerRadius: Theme.Radius.card)
+                    .strokeBorder(Theme.Colors.hairline, lineWidth: 1))
+        )
     }
 }

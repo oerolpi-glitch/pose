@@ -20,11 +20,11 @@ struct IntroStep: View {
             }
             Text("never freeze in front of a camera again")
                 .font(Theme.Typography.screenTitle)
-                .foregroundStyle(Theme.Colors.primaryDark)
+                .foregroundStyle(Theme.Colors.foreground)
                 .multilineTextAlignment(.center)
             Text("real-time AI coaching that guides you into your best pose, every single shot")
                 .font(Theme.Typography.body)
-                .foregroundStyle(Theme.Colors.subtitle)
+                .foregroundStyle(Theme.Colors.secondary)
                 .multilineTextAlignment(.center)
             Spacer()
             PillButton(title: "get started") { viewModel.advance() }
@@ -48,7 +48,7 @@ struct GoalsStep: View {
             VStack(alignment: .leading, spacing: Theme.Spacing.l) {
                 Text("what do you struggle with most in photos?")
                     .font(Theme.Typography.stepTitle)
-                    .foregroundStyle(Theme.Colors.primaryDark)
+                    .foregroundStyle(Theme.Colors.foreground)
                     .padding(.top, Theme.Spacing.xl)
 
                 VStack(spacing: Theme.Spacing.s) {
@@ -65,7 +65,7 @@ struct GoalsStep: View {
 
                 Text("what type of photos do you want to master?")
                     .font(Theme.Typography.sectionTitle)
-                    .foregroundStyle(Theme.Colors.primaryDark)
+                    .foregroundStyle(Theme.Colors.foreground)
 
                 VStack(spacing: Theme.Spacing.s) {
                     ForEach(OnboardingViewModel.goalOptions, id: \.self) { option in
@@ -95,16 +95,16 @@ struct GoalsStep: View {
             HStack {
                 Text(label)
                     .font(Theme.Typography.body)
-                    .foregroundStyle(isSelected ? Theme.Colors.onPrimary : Theme.Colors.primaryDark)
+                    .foregroundStyle(isSelected ? Theme.Colors.onAccent : Theme.Colors.foreground)
                 Spacer()
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                     .font(Theme.Icon.inline())
-                    .foregroundStyle(isSelected ? Theme.Colors.onPrimary : Theme.Colors.subtitle)
+                    .foregroundStyle(isSelected ? Theme.Colors.onAccent : Theme.Colors.secondary)
             }
             .padding(Theme.Spacing.m)
             .background(
                 RoundedRectangle(cornerRadius: Theme.Radius.card)
-                    .fill(isSelected ? Theme.Colors.primaryDark : Theme.Colors.surface)
+                    .fill(isSelected ? Theme.Colors.accent : Theme.Colors.surface)
             )
         }
         .buttonStyle(.pressable)
@@ -134,20 +134,20 @@ struct AnalyzingStep: View {
                     .stroke(Theme.Colors.surface, lineWidth: 10)
                 Circle()
                     .trim(from: 0, to: progress)
-                    .stroke(Theme.Colors.primaryDark,
+                    .stroke(Theme.Colors.accent,
                             style: StrokeStyle(lineWidth: 10, lineCap: .round))
                     .rotationEffect(.degrees(-90))
                 Text("\(Int(progress * 100))%")
                     .font(Theme.Typography.screenTitle)
                     .monospacedDigit()
-                    .foregroundStyle(Theme.Colors.primaryDark)
+                    .foregroundStyle(Theme.Colors.foreground)
                     .contentTransition(.numericText(value: progress * 100))
             }
             .frame(width: 180, height: 180)
 
             Text(messages[messageIndex])
                 .font(Theme.Typography.body)
-                .foregroundStyle(Theme.Colors.subtitle)
+                .foregroundStyle(Theme.Colors.secondary)
                 .id(messageIndex)
                 .transition(.opacity)
 
@@ -185,7 +185,7 @@ struct SocialProofStep: View {
             VStack(alignment: .leading, spacing: Theme.Spacing.l) {
                 Text("you're in good company")
                     .font(Theme.Typography.stepTitle)
-                    .foregroundStyle(Theme.Colors.primaryDark)
+                    .foregroundStyle(Theme.Colors.foreground)
                     .padding(.top, Theme.Spacing.xl)
 
                 ForEach(reviews, id: \.0) { review in
@@ -194,15 +194,15 @@ struct SocialProofStep: View {
                             ForEach(0..<5, id: \.self) { _ in
                                 Image(systemName: "star.fill")
                                     .font(Theme.Icon.micro())
-                                    .foregroundStyle(Theme.Colors.primaryDark)
+                                    .foregroundStyle(Theme.Colors.accent)
                             }
                         }
                         Text(review.0)
                             .font(Theme.Typography.body)
-                            .foregroundStyle(Theme.Colors.primaryDark)
+                            .foregroundStyle(Theme.Colors.foreground)
                         Text(review.1)
                             .font(Theme.Typography.caption)
-                            .foregroundStyle(Theme.Colors.subtitle)
+                            .foregroundStyle(Theme.Colors.secondary)
                     }
                     .padding(Theme.Spacing.m)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -234,22 +234,22 @@ struct FeatureRevealStep: View {
             VStack(alignment: .leading, spacing: Theme.Spacing.l) {
                 Text("here's what you get")
                     .font(Theme.Typography.stepTitle)
-                    .foregroundStyle(Theme.Colors.primaryDark)
+                    .foregroundStyle(Theme.Colors.foreground)
                     .padding(.top, Theme.Spacing.xl)
 
                 ForEach(features, id: \.1) { feature in
                     HStack(spacing: Theme.Spacing.m) {
                         Image(systemName: feature.0)
                             .font(Theme.Icon.feature())
-                            .foregroundStyle(Theme.Colors.primaryDark)
+                            .foregroundStyle(Theme.Colors.accent)
                             .frame(width: 44)
                         VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
                             Text(feature.1)
                                 .font(Theme.Typography.sectionTitle)
-                                .foregroundStyle(Theme.Colors.primaryDark)
+                                .foregroundStyle(Theme.Colors.foreground)
                             Text(feature.2)
                                 .font(Theme.Typography.caption)
-                                .foregroundStyle(Theme.Colors.subtitle)
+                                .foregroundStyle(Theme.Colors.secondary)
                         }
                     }
                     .padding(Theme.Spacing.m)
@@ -276,12 +276,12 @@ struct CustomPlanStep: View {
             VStack(alignment: .leading, spacing: Theme.Spacing.l) {
                 Text("your plan is ready")
                     .font(Theme.Typography.stepTitle)
-                    .foregroundStyle(Theme.Colors.primaryDark)
+                    .foregroundStyle(Theme.Colors.foreground)
                     .padding(.top, Theme.Spacing.xl)
 
                 Text("built from your answers")
                     .font(Theme.Typography.body)
-                    .foregroundStyle(Theme.Colors.subtitle)
+                    .foregroundStyle(Theme.Colors.secondary)
 
                 VStack(alignment: .leading, spacing: Theme.Spacing.s) {
                     planRow("daily pose coaching",
@@ -310,7 +310,7 @@ struct CustomPlanStep: View {
                 #if DEBUG
                 Button("skip (debug only)") { appState.completeOnboarding() }
                     .font(Theme.Typography.caption)
-                    .foregroundStyle(Theme.Colors.subtitle)
+                    .foregroundStyle(Theme.Colors.secondary)
                     .frame(maxWidth: .infinity)
                     .buttonStyle(.pressable)
                 #endif
@@ -325,11 +325,11 @@ struct CustomPlanStep: View {
     private var legalFooter: some View {
         HStack(spacing: Theme.Spacing.xs) {
             Link("terms", destination: Config.termsURL)
-            Text("·").foregroundStyle(Theme.Colors.subtitle)
+            Text("·").foregroundStyle(Theme.Colors.secondary)
             Link("privacy", destination: Config.privacyURL)
         }
         .font(Theme.Typography.caption)
-        .tint(Theme.Colors.subtitle)
+        .tint(Theme.Colors.secondary)
         .frame(maxWidth: .infinity)
         .padding(.top, Theme.Spacing.xs)
     }
@@ -338,14 +338,14 @@ struct CustomPlanStep: View {
         HStack(spacing: Theme.Spacing.m) {
             Image(systemName: "checkmark.seal.fill")
                 .font(Theme.Icon.inline())
-                .foregroundStyle(Theme.Colors.primaryDark)
+                .foregroundStyle(Theme.Colors.accent)
             VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
                 Text(title)
                     .font(Theme.Typography.bodyEmphasis)
-                    .foregroundStyle(Theme.Colors.primaryDark)
+                    .foregroundStyle(Theme.Colors.foreground)
                 Text(detail)
                     .font(Theme.Typography.caption)
-                    .foregroundStyle(Theme.Colors.subtitle)
+                    .foregroundStyle(Theme.Colors.secondary)
             }
         }
         .padding(Theme.Spacing.m)

@@ -4,26 +4,37 @@ import SwiftUI
 /// No color, font, spacing, radius, or shadow literals anywhere else.
 enum Theme {
 
+    /// Noir Editorial. A near-black canvas with warm white and a single
+    /// champagne-gold accent — premium, photography-forward, cohesive with the
+    /// live camera. Roles are named by intent so a future light theme is a
+    /// values-only change.
     enum Colors {
-        /// Soft cream page background.
-        static let background = Color(red: 0.961, green: 0.937, blue: 0.902)   // #F5EFE6
-        /// Warm dark brown — buttons, headers, primary text.
-        static let primaryDark = Color(red: 0.243, green: 0.184, blue: 0.145)  // #3E2F25
-        /// Muted taupe for subtitles and secondary text.
-        static let subtitle = Color(red: 0.541, green: 0.478, blue: 0.420)     // #8A7A6B
-        /// Slightly darker cream for cards.
-        static let surface = Color(red: 0.937, green: 0.902, blue: 0.847)      // #EFE6D8
-        /// Text/icons on top of primaryDark.
-        static let onPrimary = Color(red: 0.961, green: 0.937, blue: 0.902)
-        /// Warm near-black dimming layer behind full-screen overlays (captured
-        /// photo, modals). Warmer than pure black, on-brand.
-        static let scrim = primaryDark.opacity(0.85)
-        /// Hairline edge that crisps low-contrast cards against the page.
-        static let hairline = primaryDark.opacity(0.06)
-        /// One consistent fill for every floating chip/control over the camera
-        /// feed, so the HUD reads as a single system rather than mismatched
-        /// opacities.
-        static let hudChip = primaryDark.opacity(0.5)
+        // --- grounds ---
+        /// Near-black page canvas.
+        static let background = Color(red: 0.055, green: 0.055, blue: 0.067)    // #0E0E11
+        /// Slightly lifted surface for cards and controls.
+        static let surface = Color(red: 0.110, green: 0.110, blue: 0.129)       // #1C1C21
+
+        // --- content ---
+        /// Warm white — primary text, icons, and strokes.
+        static let foreground = Color(red: 0.965, green: 0.957, blue: 0.937)    // #F6F4EF
+        /// Muted warm grey — secondary text.
+        static let secondary = Color(red: 0.655, green: 0.635, blue: 0.606)     // #A7A29B
+
+        // --- accent ---
+        /// Champagne gold — the one accent: primary actions, active states, score.
+        static let accent = Color(red: 0.788, green: 0.663, blue: 0.416)        // #C9A96A
+        /// Deep espresso for text/icons sitting on the gold accent.
+        static let onAccent = Color(red: 0.102, green: 0.082, blue: 0.035)      // #1A1509
+
+        // --- utility ---
+        /// Dimming layer behind full-screen overlays (captured photo, modals).
+        static let scrim = Color.black.opacity(0.62)
+        /// Hairline edge that separates surfaces on the dark ground.
+        static let hairline = foreground.opacity(0.10)
+        /// One consistent frosted fill for every floating control over the
+        /// camera feed, so the HUD reads as a single system.
+        static let hudChip = Color.black.opacity(0.38)
     }
 
     /// Semantic type scale. Views name the role, never a size.
@@ -113,11 +124,12 @@ extension View {
                 RoundedRectangle(cornerRadius: Theme.Radius.card)
                     .strokeBorder(Theme.Colors.hairline, lineWidth: 1)
             )
-            .shadow(color: Theme.Colors.primaryDark.opacity(0.08), radius: 12, x: 0, y: 4)
+            .shadow(color: Color.black.opacity(0.35), radius: 14, x: 0, y: 6)
     }
 
-    /// Lift for the primary call-to-action so it rises off the page.
+    /// Lift for the primary call-to-action — a soft gold glow so the one gold
+    /// action reads as lit rather than flat on the dark ground.
     func themedPrimaryLift() -> some View {
-        shadow(color: Theme.Colors.primaryDark.opacity(0.18), radius: 10, x: 0, y: 4)
+        shadow(color: Theme.Colors.accent.opacity(0.30), radius: 12, x: 0, y: 4)
     }
 }

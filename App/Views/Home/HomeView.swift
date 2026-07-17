@@ -17,7 +17,7 @@ struct HomeView: View {
                 VStack(alignment: .leading, spacing: Theme.Spacing.l) {
                     Text("shoot your shot")
                         .font(Theme.Typography.screenTitle)
-                        .foregroundStyle(Theme.Colors.primaryDark)
+                        .foregroundStyle(Theme.Colors.foreground)
                         .padding(.top, Theme.Spacing.xl)
 
                     PillButton(title: "open camera") {
@@ -27,7 +27,7 @@ struct HomeView: View {
 
                     Text("shooting modes")
                         .font(Theme.Typography.sectionTitle)
-                        .foregroundStyle(Theme.Colors.primaryDark)
+                        .foregroundStyle(Theme.Colors.foreground)
 
                     HStack(spacing: Theme.Spacing.m) {
                         ModeCard(title: ShootingMode.poseMe.title,
@@ -67,6 +67,6 @@ struct HomeView: View {
                 }
             }
         }
-        .tint(Theme.Colors.primaryDark)
+        .tint(Theme.Colors.accent)
     }
 }

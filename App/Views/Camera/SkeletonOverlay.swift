@@ -14,9 +14,9 @@ struct SkeletonOverlay: View {
                 var path = Path()
                 path.move(to: a)
                 path.addLine(to: b)
-                context.stroke(path, with: .color(Theme.Colors.primaryDark.opacity(0.35)),
+                context.stroke(path, with: .color(Color.black.opacity(0.45)),
                                style: StrokeStyle(lineWidth: 7, lineCap: .round))
-                context.stroke(path, with: .color(Theme.Colors.onPrimary.opacity(0.95)),
+                context.stroke(path, with: .color(Theme.Colors.foreground.opacity(0.95)),
                                style: StrokeStyle(lineWidth: 4, lineCap: .round))
             }
         }

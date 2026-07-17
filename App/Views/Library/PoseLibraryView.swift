@@ -14,7 +14,7 @@ struct PoseLibraryView: View {
             VStack(alignment: .leading, spacing: Theme.Spacing.l) {
                 Text("choose a pose")
                     .font(Theme.Typography.stepTitle)
-                    .foregroundStyle(Theme.Colors.primaryDark)
+                    .foregroundStyle(Theme.Colors.foreground)
                     .padding(.top, Theme.Spacing.xl)
 
                 SearchField(placeholder: "describe your shot", text: $viewModel.query)
@@ -58,17 +58,16 @@ struct PoseLibraryView: View {
         VStack(spacing: Theme.Spacing.m) {
             Image(systemName: "magnifyingglass")
                 .font(Theme.Icon.hero())
-                .foregroundStyle(Theme.Colors.subtitle)
+                .foregroundStyle(Theme.Colors.secondary)
             Text("no poses match")
                 .font(Theme.Typography.sectionTitle)
-                .foregroundStyle(Theme.Colors.primaryDark)
+                .foregroundStyle(Theme.Colors.foreground)
             Text("try clearing your search or tag filters")
                 .font(Theme.Typography.caption)
-                .foregroundStyle(Theme.Colors.subtitle)
+                .foregroundStyle(Theme.Colors.secondary)
         }
         .frame(maxWidth: .infinity)
         .padding(.top, Theme.Spacing.xl * 2)
-        .padding(.top, Theme.Spacing.xl)
     }
 }
 
@@ -93,14 +92,14 @@ struct PoseCard: View {
                         Image(systemName: isFavorite ? "heart.fill" : "heart")
                             .contentTransition(.symbolEffect(.replace))
                             .font(Theme.Icon.inline())
-                            .foregroundStyle(Theme.Colors.primaryDark)
+                            .foregroundStyle(isFavorite ? Theme.Colors.accent : Theme.Colors.foreground)
                             .padding(Theme.Spacing.s)
                     }
                     .buttonStyle(.pressable)
                 }
                 Text(pose.title)
                     .font(Theme.Typography.bodyEmphasis)
-                    .foregroundStyle(Theme.Colors.primaryDark)
+                    .foregroundStyle(Theme.Colors.foreground)
                     .padding([.horizontal, .bottom], Theme.Spacing.m)
             }
             .background(RoundedRectangle(cornerRadius: Theme.Radius.card).fill(Theme.Colors.surface))

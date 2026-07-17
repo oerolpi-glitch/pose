@@ -29,7 +29,7 @@ struct CameraScreen: View {
 
                 if let target = viewModel.targetPose, viewModel.mode == .poseMe {
                     MannequinView(pose: target.poseVector,
-                                  lineColor: Theme.Colors.onPrimary.opacity(0.35),
+                                  lineColor: Theme.Colors.accent.opacity(0.5),
                                   fillHead: false)
                         .allowsHitTesting(false)
                         .padding(Theme.Spacing.xl)
@@ -80,7 +80,7 @@ struct CameraScreen: View {
             } label: {
                 Image(systemName: "xmark")
                     .font(Theme.Icon.control())
-                    .foregroundStyle(Theme.Colors.onPrimary)
+                    .foregroundStyle(Theme.Colors.foreground)
                     .padding(Theme.Spacing.m)
                     .background(Circle().fill(Theme.Colors.hudChip))
             }
@@ -92,7 +92,7 @@ struct CameraScreen: View {
                 Text("\(Int(score * 100))%")
                     .font(Theme.Typography.readout)
                     .monospacedDigit()
-                    .foregroundStyle(Theme.Colors.onPrimary)
+                    .foregroundStyle(Theme.Colors.foreground)
                     .contentTransition(.numericText())
                     .padding(.horizontal, Theme.Spacing.m)
                     .padding(.vertical, Theme.Spacing.s)
@@ -107,7 +107,7 @@ struct CameraScreen: View {
             } label: {
                 Image(systemName: "arrow.triangle.2.circlepath.camera")
                     .font(Theme.Icon.control())
-                    .foregroundStyle(Theme.Colors.onPrimary)
+                    .foregroundStyle(Theme.Colors.foreground)
                     .padding(Theme.Spacing.m)
                     .background(Circle().fill(Theme.Colors.hudChip))
             }
@@ -123,14 +123,14 @@ struct CameraScreen: View {
         VStack(spacing: Theme.Spacing.m) {
             Image(systemName: "figure.stand")
                 .font(Theme.Icon.hero())
-                .foregroundStyle(Theme.Colors.onPrimary.opacity(0.9))
+                .foregroundStyle(Theme.Colors.foreground.opacity(0.9))
                 .symbolEffect(.pulse)
             Text("step into frame")
                 .font(Theme.Typography.stepTitle)
-                .foregroundStyle(Theme.Colors.onPrimary)
+                .foregroundStyle(Theme.Colors.foreground)
             Text("stand back until your whole body fits")
                 .font(Theme.Typography.caption)
-                .foregroundStyle(Theme.Colors.onPrimary.opacity(0.75))
+                .foregroundStyle(Theme.Colors.foreground.opacity(0.75))
         }
         .padding(Theme.Spacing.xl)
         .background(
@@ -146,7 +146,7 @@ struct CameraScreen: View {
                 if let hint = displayHint {
                     Text(hint)
                         .font(Theme.Typography.bodyEmphasis)
-                        .foregroundStyle(Theme.Colors.onPrimary)
+                        .foregroundStyle(Theme.Colors.foreground)
                         .padding(.horizontal, Theme.Spacing.m)
                         .padding(.vertical, Theme.Spacing.s)
                         .background(Capsule().fill(Theme.Colors.hudChip))
@@ -159,7 +159,7 @@ struct CameraScreen: View {
             ZStack {
                 Circle()
                     .trim(from: 0, to: viewModel.autoCaptureProgress)
-                    .stroke(Theme.Colors.onPrimary, lineWidth: 4)
+                    .stroke(Theme.Colors.accent, lineWidth: 4)
                     .rotationEffect(.degrees(-90))
                     .frame(width: 84, height: 84)
                     .animation(Theme.Motion.spring, value: viewModel.autoCaptureProgress)
@@ -167,9 +167,9 @@ struct CameraScreen: View {
                     viewModel.capture()
                 } label: {
                     Circle()
-                        .fill(Theme.Colors.onPrimary)
+                        .fill(Theme.Colors.foreground)
                         .frame(width: 70, height: 70)
-                        .overlay(Circle().stroke(Theme.Colors.primaryDark, lineWidth: 3))
+                        .overlay(Circle().strokeBorder(Theme.Colors.background, lineWidth: 3))
                 }
                 .buttonStyle(.pressable)
             }
@@ -205,10 +205,10 @@ struct CameraScreen: View {
             VStack(spacing: Theme.Spacing.m) {
                 Text("camera access needed")
                     .font(Theme.Typography.readout)
-                    .foregroundStyle(Theme.Colors.primaryDark)
+                    .foregroundStyle(Theme.Colors.foreground)
                 Text("enable camera access in settings to get live pose coaching")
                     .font(Theme.Typography.body)
-                    .foregroundStyle(Theme.Colors.subtitle)
+                    .foregroundStyle(Theme.Colors.secondary)
                     .multilineTextAlignment(.center)
                 PillButton(title: "open settings") {
                     if let url = URL(string: UIApplication.openSettingsURLString) {

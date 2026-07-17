@@ -5,7 +5,7 @@ import PoseKit
 /// One renderer serves pose cards, the camera ghost overlay, and onboarding art.
 struct MannequinView: View {
     let pose: PoseVector
-    var lineColor: Color = Theme.Colors.primaryDark
+    var lineColor: Color = Theme.Colors.foreground
     var fillHead: Bool = true
 
     var body: some View {

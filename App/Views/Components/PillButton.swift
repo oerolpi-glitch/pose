@@ -8,10 +8,10 @@ struct PillButton: View {
         Button(action: action) {
             Text(title)
                 .font(Theme.Typography.bodyEmphasis)
-                .foregroundStyle(Theme.Colors.onPrimary)
+                .foregroundStyle(Theme.Colors.onAccent)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, Theme.Spacing.m + 2)
-                .background(Capsule().fill(Theme.Colors.primaryDark))
+                .background(Capsule().fill(Theme.Colors.accent))
                 .themedPrimaryLift()
         }
         .buttonStyle(.pressable)

@@ -43,7 +43,7 @@ struct OnboardingFlow: View {
                 .fill(Theme.Colors.surface)
                 .overlay(alignment: .leading) {
                     Capsule()
-                        .fill(Theme.Colors.primaryDark)
+                        .fill(Theme.Colors.accent)
                         .frame(width: geo.size.width * viewModel.step.progress)
                 }
         }

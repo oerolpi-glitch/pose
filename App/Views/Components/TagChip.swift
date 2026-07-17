@@ -21,6 +21,6 @@ struct TagChip: View {
                 )
         }
         .buttonStyle(.pressable)
-        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: isSelected)
+        .animation(Theme.Motion.spring, value: isSelected)
     }
 }

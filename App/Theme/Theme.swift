@@ -57,6 +57,14 @@ enum Theme {
         static func accessory(_ weight: Font.Weight = .regular) -> Font {
             .system(size: 14, weight: weight)
         }
+        /// 18 — controls overlaid on the camera.
+        static func control(_ weight: Font.Weight = .semibold) -> Font {
+            .system(size: 18, weight: weight)
+        }
+        /// 12 — dense decorative glyphs (review stars).
+        static func micro(_ weight: Font.Weight = .regular) -> Font {
+            .system(size: 12, weight: weight)
+        }
     }
 
     enum Spacing {
@@ -70,6 +78,14 @@ enum Theme {
     enum Radius {
         static let card: CGFloat = 24
         static let pill: CGFloat = 999
+    }
+
+    /// One spring for every state change in the app, so press feedback,
+    /// selection, and screen transitions all move with the same physics.
+    enum Motion {
+        static let spring = Animation.spring(response: 0.35, dampingFraction: 0.8)
+        static let pressedScale: CGFloat = 0.97
+        static let pressedOpacity: CGFloat = 0.85
     }
 }
 

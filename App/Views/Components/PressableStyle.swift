@@ -5,9 +5,9 @@ import SwiftUI
 struct PressableStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .scaleEffect(configuration.isPressed ? 0.97 : 1)
-            .opacity(configuration.isPressed ? 0.85 : 1)
-            .animation(.spring(response: 0.35, dampingFraction: 0.8), value: configuration.isPressed)
+            .scaleEffect(configuration.isPressed ? Theme.Motion.pressedScale : 1)
+            .opacity(configuration.isPressed ? Theme.Motion.pressedOpacity : 1)
+            .animation(Theme.Motion.spring, value: configuration.isPressed)
     }
 }
 

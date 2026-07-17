@@ -45,4 +45,17 @@ final class HeuristicsTests: XCTestCase {
         XCTAssertEqual(hints.count, 2)
         XCTAssertEqual(hints[0].priority, 0)
     }
+
+    func testTooCloseDetected() {
+        let shifted = Fixtures.transformed(Fixtures.standing, translation: [0, -0.10])
+        let hints = PostureHeuristics.hints(for: shifted)
+        XCTAssertTrue(hints.contains { $0.message == "step back a little" })
+    }
+
+    func testSubjectLowInFrameDetected() {
+        var p = Fixtures.standing.points
+        p[.nose] = [0.5, 0.36]
+        let hints = PostureHeuristics.hints(for: PoseVector(points: p))
+        XCTAssertTrue(hints.contains { $0.message == "raise the camera" })
+    }
 }

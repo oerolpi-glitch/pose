@@ -1,0 +1,40 @@
+name: Pose
+options:
+  bundleIdPrefix: com.oerol
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+packages:
+  SuperwallKit:
+    url: https://github.com/superwall/Superwall-iOS
+    from: 4.0.0
+  PoseKit:
+    path: PoseKit
+targets:
+  Pose:
+    type: application
+    platform: iOS
+    sources:
+      - App
+    dependencies:
+      - package: SuperwallKit
+        product: SuperwallKit
+      - package: PoseKit
+        product: PoseKit
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.oerol.pose
+        INFOPLIST_FILE: App/Info.plist
+        TARGETED_DEVICE_FAMILY: "1"
+        SWIFT_VERSION: "5.10"
+        CODE_SIGN_STYLE: Automatic
+    scheme:
+      testTargets:
+        - PoseTests
+  PoseTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - AppTests
+    dependencies:
+      - target: Pose

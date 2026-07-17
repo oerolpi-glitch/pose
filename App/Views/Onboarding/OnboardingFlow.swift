@@ -1,11 +1,29 @@
 import SwiftUI
 
 struct OnboardingFlow: View {
-    @EnvironmentObject private var appState: AppState
+    @StateObject private var viewModel = OnboardingViewModel()
+
     var body: some View {
-        Button("begin") { appState.completeOnboarding() }
-            .font(Theme.Typography.sectionTitle)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Theme.Colors.background)
+        NavigationStack {
+            ZStack {
+                Theme.Colors.background.ignoresSafeArea()
+                Group {
+                    switch viewModel.step {
+                    case .intro:         IntroStep()
+                    case .goals:         GoalsStep()
+                    case .analyzing:     AnalyzingStep()
+                    case .socialProof:   SocialProofStep()
+                    case .featureReveal: FeatureRevealStep()
+                    case .customPlan:    CustomPlanStep()
+                    }
+                }
+                .transition(.asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity),
+                                        removal: .move(edge: .leading).combined(with: .opacity)))
+                .id(viewModel.step)
+            }
+            .animation(Theme.Motion.spring, value: viewModel.step)
+            .toolbar(.hidden, for: .navigationBar)
+        }
+        .environmentObject(viewModel)
     }
 }

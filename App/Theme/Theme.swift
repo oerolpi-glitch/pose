@@ -17,20 +17,29 @@ enum Theme {
         static let onPrimary = Color(red: 0.961, green: 0.937, blue: 0.902)
     }
 
+    /// Semantic type scale. Views name the role, never a size.
     enum Typography {
-        /// Elegant serif for editorial headers ("shoot your shot").
-        static func header(_ size: CGFloat) -> Font {
-            .system(size: size, weight: .medium, design: .serif)
+        /// Serif, 36 — the one big editorial statement per screen ("shoot your shot").
+        static let screenTitle = serif(36)
+        /// Serif, 30 — headers on secondary screens and onboarding steps.
+        static let stepTitle = serif(30)
+        /// Serif, 28 — numeric readouts over the camera.
+        static let readout = serif(28, weight: .semibold)
+        /// Serif, 20 — section headers and card titles.
+        static let sectionTitle = serif(20, weight: .semibold)
+        /// Sans, 16 — body copy, button labels, subtitles.
+        static let body = sans(16)
+        /// Sans, 16 semibold — emphasized body (primary button labels, hints).
+        static let bodyEmphasis = sans(16, weight: .medium)
+        /// Sans, 13 — captions and metadata.
+        static let caption = sans(13)
+
+        private static func serif(_ size: CGFloat, weight: Font.Weight = .medium) -> Font {
+            .system(size: size, weight: weight, design: .serif)
         }
-        static func title() -> Font {
-            .system(size: 20, weight: .semibold, design: .serif)
-        }
-        /// Legible sans-serif for body and subtitles.
-        static func body() -> Font {
-            .system(size: 16, weight: .regular, design: .default)
-        }
-        static func caption() -> Font {
-            .system(size: 13, weight: .regular, design: .default)
+
+        private static func sans(_ size: CGFloat, weight: Font.Weight = .regular) -> Font {
+            .system(size: size, weight: weight, design: .default)
         }
     }
 

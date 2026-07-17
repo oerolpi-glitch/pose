@@ -1,11 +1,14 @@
 import SwiftUI
 import UIKit
+import PoseKit
 
 struct HomeView: View {
     @State private var path = NavigationPath()
 
     enum HomeRoute: Hashable {
         case library
+        case camera(ShootingMode)
+        case poseCamera(String)
     }
 
     var body: some View {
@@ -19,7 +22,7 @@ struct HomeView: View {
 
                     PillButton(title: "open camera") {
                         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                        // wired in Task 15 (pushes CameraScreen(mode: .guideMe))
+                        path.append(HomeRoute.camera(.guideMe))
                     }
 
                     Text("shooting modes")
@@ -35,7 +38,7 @@ struct HomeView: View {
                         ModeCard(title: ShootingMode.guideMe.title,
                                  subtitle: ShootingMode.guideMe.subtitle,
                                  systemImage: "waveform.badge.mic") {
-                            // wired in Task 15 (pushes CameraScreen(mode: .guideMe))
+                            path.append(HomeRoute.camera(.guideMe))
                         }
                     }
 
@@ -52,7 +55,15 @@ struct HomeView: View {
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: HomeRoute.self) { route in
                 switch route {
-                case .library: PoseLibraryView()
+                case .library:
+                    PoseLibraryView { pose in
+                        path.append(HomeRoute.poseCamera(pose.id))
+                    }
+                case .camera(let mode):
+                    CameraScreen(mode: mode, initialPose: nil)
+                case .poseCamera(let id):
+                    CameraScreen(mode: .poseMe,
+                                 initialPose: PoseLibraryService().allPoses().first { $0.id == id })
                 }
             }
         }

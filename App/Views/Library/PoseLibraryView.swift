@@ -28,19 +28,22 @@ struct PoseLibraryView: View {
                     }
                 }
 
-                if viewModel.results.isEmpty {
-                    emptyState
-                } else {
-                    LazyVGrid(columns: columns, spacing: Theme.Spacing.m) {
-                        ForEach(viewModel.results) { pose in
-                            PoseCard(pose: pose,
-                                     isFavorite: favorites.isFavorite(pose.id),
-                                     onFavorite: { favorites.toggle(pose.id) },
-                                     onSelect: { onSelect?(pose) })
+                Group {
+                    if viewModel.results.isEmpty {
+                        emptyState
+                            .transition(.opacity)
+                    } else {
+                        LazyVGrid(columns: columns, spacing: Theme.Spacing.m) {
+                            ForEach(viewModel.results) { pose in
+                                PoseCard(pose: pose,
+                                         isFavorite: favorites.isFavorite(pose.id),
+                                         onFavorite: { favorites.toggle(pose.id) },
+                                         onSelect: { onSelect?(pose) })
+                            }
                         }
                     }
-                    .animation(Theme.Motion.spring, value: viewModel.results.map(\.id))
                 }
+                .animation(Theme.Motion.spring, value: viewModel.results.map(\.id))
             }
             .padding(.horizontal, Theme.Spacing.l)
         }

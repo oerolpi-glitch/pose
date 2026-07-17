@@ -73,6 +73,28 @@ highest-risk item, to check first:
 - [ ] Sustained ≥30 FPS for 3+ minutes (Xcode FPS gauge); watch thermal state
       drop inference to every 2nd frame under load without the UI stalling.
 
+## 6. Design polish pass (on-device — deferred from the blind polish pass)
+
+These are judgment calls on values that can't be tuned without seeing them on a
+real screen. The certain-safe polish is already in; these are the finish.
+
+- [ ] Camera HUD on `.ultraThinMaterial` instead of the flat `hudChip` fill —
+      floats and blurs the scene like Apple's Camera app. Tune the warm tint so
+      it doesn't read cold/grey.
+- [ ] Dynamic Type: map the `Theme.Typography` roles to `relativeTo:` text
+      styles so type scales with the user's setting. Then verify the largest
+      accessibility sizes don't overflow the `ModeCard` fixed `minHeight` or the
+      feature-row icon columns.
+- [ ] Serif display tracking: large titles (`screenTitle`, `stepTitle`) likely
+      want slight negative tracking + tightened leading at 30–36pt.
+- [ ] Shutter button: the classic two-ring Apple shutter (outer ring + gap +
+      inner disc that dips on press), concentric with the auto-capture ring.
+- [ ] Captured-photo preview: give save vs retake a real hierarchy on the dark
+      scrim (a light-context button treatment — the current secondary variant is
+      built for light backgrounds and was pulled).
+- [ ] Spacing rhythm: tighten section-header-to-content gaps and widen
+      inter-group gaps on Home and Library for a more composed rhythm.
+
 ## Build
 
 ```bash

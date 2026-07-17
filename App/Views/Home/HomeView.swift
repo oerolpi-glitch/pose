@@ -1,10 +1,61 @@
 import SwiftUI
+import UIKit
 
 struct HomeView: View {
+    @State private var path = NavigationPath()
+
+    enum HomeRoute: Hashable {
+        case library
+    }
+
     var body: some View {
-        Text("home")
-            .font(Theme.Typography.screenTitle)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Theme.Colors.background)
+        NavigationStack(path: $path) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: Theme.Spacing.l) {
+                    Text("shoot your shot")
+                        .font(Theme.Typography.screenTitle)
+                        .foregroundStyle(Theme.Colors.primaryDark)
+                        .padding(.top, Theme.Spacing.xl)
+
+                    PillButton(title: "open camera") {
+                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                        // wired in Task 15 (pushes CameraScreen(mode: .guideMe))
+                    }
+
+                    Text("shooting modes")
+                        .font(Theme.Typography.sectionTitle)
+                        .foregroundStyle(Theme.Colors.primaryDark)
+
+                    HStack(spacing: Theme.Spacing.m) {
+                        ModeCard(title: ShootingMode.poseMe.title,
+                                 subtitle: ShootingMode.poseMe.subtitle,
+                                 systemImage: "figure.stand") {
+                            path.append(HomeRoute.library) // pose-me starts from picking a pose
+                        }
+                        ModeCard(title: ShootingMode.guideMe.title,
+                                 subtitle: ShootingMode.guideMe.subtitle,
+                                 systemImage: "waveform.badge.mic") {
+                            // wired in Task 15 (pushes CameraScreen(mode: .guideMe))
+                        }
+                    }
+
+                    WideCard(title: "pose library",
+                             subtitle: "browse poses",
+                             systemImage: "square.grid.2x2") {
+                        path.append(HomeRoute.library)
+                    }
+                }
+                .padding(.horizontal, Theme.Spacing.l)
+                .padding(.bottom, Theme.Spacing.xl)
+            }
+            .background(Theme.Colors.background.ignoresSafeArea())
+            .toolbar(.hidden, for: .navigationBar)
+            .navigationDestination(for: HomeRoute.self) { route in
+                switch route {
+                case .library: PoseLibraryView()
+                }
+            }
+        }
+        .tint(Theme.Colors.primaryDark)
     }
 }

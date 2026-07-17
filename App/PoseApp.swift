@@ -19,6 +19,7 @@ struct PoseApp: App {
                 }
             }
             .environmentObject(appState)
+            .task { appState.observeSubscriptionStatus() }
         }
     }
 }

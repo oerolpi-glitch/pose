@@ -1,6 +1,7 @@
 import SwiftUI
 import PoseKit
 import UIKit
+import SuperwallKit
 
 // MARK: - 1. Value proposition
 
@@ -290,10 +291,22 @@ struct CustomPlanStep: View {
                 }
 
                 PillButton(title: "unlock my plan") {
-                    // Task 19 replaces this line with the Superwall paywall gate.
-                    appState.completeOnboarding()
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                    // Gated placement: the closure runs only once the user is
+                    // subscribed (or already was), so this is the hard paywall.
+                    Superwall.shared.register(placement: "onboarding_complete") {
+                        appState.completeOnboarding()
+                    }
                 }
                 .padding(.top, Theme.Spacing.s)
+
+                #if DEBUG
+                Button("skip (debug only)") { appState.completeOnboarding() }
+                    .font(Theme.Typography.caption)
+                    .foregroundStyle(Theme.Colors.subtitle)
+                    .frame(maxWidth: .infinity)
+                    .buttonStyle(.pressable)
+                #endif
             }
             .padding(Theme.Spacing.xl)
         }

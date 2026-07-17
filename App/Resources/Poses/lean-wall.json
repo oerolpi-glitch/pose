@@ -1,0 +1,9 @@
+{"id":"lean-wall","title":"lean on wall","tags":["editorial","casual","full-body"],
+ "joints":{"nose":[0.46,0.15],"leftEye":[0.49,0.13],"rightEye":[0.43,0.13],
+ "leftEar":[0.515,0.145],"rightEar":[0.405,0.145],"neck":[0.47,0.23],
+ "leftShoulder":[0.55,0.24],"rightShoulder":[0.385,0.245],
+ "leftElbow":[0.59,0.36],"rightElbow":[0.35,0.37],
+ "leftWrist":[0.61,0.48],"rightWrist":[0.36,0.49],
+ "root":[0.52,0.5],"leftHip":[0.575,0.5],"rightHip":[0.465,0.5],
+ "leftKnee":[0.58,0.68],"rightKnee":[0.49,0.68],
+ "leftAnkle":[0.60,0.86],"rightAnkle":[0.50,0.86]}}

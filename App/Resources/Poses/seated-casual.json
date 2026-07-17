@@ -1,0 +1,9 @@
+{"id":"seated-casual","title":"seated casual","tags":["casual","seated"],
+ "joints":{"nose":[0.5,0.19],"leftEye":[0.53,0.17],"rightEye":[0.47,0.17],
+ "leftEar":[0.555,0.185],"rightEar":[0.445,0.185],"neck":[0.5,0.27],
+ "leftShoulder":[0.585,0.285],"rightShoulder":[0.415,0.285],
+ "leftElbow":[0.62,0.40],"rightElbow":[0.38,0.40],
+ "leftWrist":[0.60,0.52],"rightWrist":[0.40,0.52],
+ "root":[0.5,0.55],"leftHip":[0.555,0.55],"rightHip":[0.445,0.55],
+ "leftKnee":[0.62,0.62],"rightKnee":[0.38,0.62],
+ "leftAnkle":[0.60,0.80],"rightAnkle":[0.40,0.80]}}

@@ -25,6 +25,11 @@ final class CameraViewModel: NSObject, ObservableObject {
     private var holdStart: Date?
     private var thermalObserver: NSObjectProtocol?
     private var previewDismissTask: Task<Void, Never>?
+    /// True from the moment a capture is requested until its photo callback
+    /// returns. `capturedImage` only appears when the callback lands, so on a
+    /// throttled device that callback can lag past the 1s hold and let a second
+    /// shot fire for the same moment — this closes that window.
+    private var captureInFlight = false
 
     static let autoCaptureThreshold: Float = 0.85
     static let autoCaptureHoldSeconds: TimeInterval = 1.0
@@ -72,7 +77,8 @@ final class CameraViewModel: NSObject, ObservableObject {
     }
 
     func capture() {
-        guard capturedImage == nil else { return }
+        guard capturedImage == nil, !captureInFlight else { return }
+        captureInFlight = true
         camera.capturePhoto(delegate: self)
     }
 
@@ -143,7 +149,7 @@ final class CameraViewModel: NSObject, ObservableObject {
 
     private func updateHold(score: Float?) {
         guard mode == .poseMe else { return }
-        guard capturedImage == nil else {
+        guard capturedImage == nil, !captureInFlight else {
             holdStart = nil
             autoCaptureProgress = 0
             return
@@ -189,9 +195,12 @@ extension CameraViewModel: AVCapturePhotoCaptureDelegate {
     nonisolated func photoOutput(_ output: AVCapturePhotoOutput,
                                  didFinishProcessingPhoto photo: AVCapturePhoto,
                                  error: Error?) {
-        guard error == nil, let data = photo.fileDataRepresentation(),
-              let image = UIImage(data: data) else { return }
+        let image = photo.fileDataRepresentation().flatMap(UIImage.init(data:))
         Task { @MainActor in
+            // Clear the in-flight flag on every outcome, so a failed capture
+            // re-arms auto-capture instead of freezing it.
+            self.captureInFlight = false
+            guard error == nil, let image else { return }
             withAnimation(Theme.Motion.spring) {
                 self.capturedImage = image
             }

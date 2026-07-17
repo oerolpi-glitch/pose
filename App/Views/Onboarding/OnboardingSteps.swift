@@ -292,13 +292,19 @@ struct CustomPlanStep: View {
 
                 PillButton(title: "unlock my plan") {
                     UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                    // Gated placement: the closure runs only once the user is
-                    // subscribed (or already was), so this is the hard paywall.
+                    // Presents the `onboarding_complete` paywall. Whether this
+                    // closure runs ONLY after subscribing is decided by the
+                    // campaign's gating on the Superwall dashboard, not here:
+                    // the placement must be set to Gated. If it is non-gated,
+                    // errors, or the SDK is unconfigured, the closure fires and
+                    // onboarding completes for free. See docs/RELEASE.md.
                     Superwall.shared.register(placement: "onboarding_complete") {
                         appState.completeOnboarding()
                     }
                 }
                 .padding(.top, Theme.Spacing.s)
+
+                legalFooter
 
                 #if DEBUG
                 Button("skip (debug only)") { appState.completeOnboarding() }
@@ -310,6 +316,21 @@ struct CustomPlanStep: View {
             }
             .padding(Theme.Spacing.xl)
         }
+    }
+
+    /// Terms + privacy links, shown before the paywall trigger. App Review
+    /// requires these reachable from the subscription offer; the Superwall
+    /// paywall template carries them too, this is the in-app guarantee.
+    private var legalFooter: some View {
+        HStack(spacing: Theme.Spacing.xs) {
+            Link("terms", destination: Config.termsURL)
+            Text("·").foregroundStyle(Theme.Colors.subtitle)
+            Link("privacy", destination: Config.privacyURL)
+        }
+        .font(Theme.Typography.caption)
+        .tint(Theme.Colors.subtitle)
+        .frame(maxWidth: .infinity)
+        .padding(.top, Theme.Spacing.xs)
     }
 
     private func planRow(_ title: String, detail: String) -> some View {

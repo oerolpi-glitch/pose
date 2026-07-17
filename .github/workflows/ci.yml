@@ -20,7 +20,9 @@ jobs:
       - name: Generate project
         run: xcodegen
       - name: Build + test on simulator
+        shell: bash
         run: |
+          set -o pipefail
           xcodebuild test -project Pose.xcodeproj -scheme Pose \
             -destination 'platform=iOS Simulator,name=iPhone 16' \
-            CODE_SIGNING_ALLOWED=NO | tail -100
+            CODE_SIGNING_ALLOWED=NO | tail -300

@@ -77,33 +77,67 @@ struct PoseCard: View {
     let onFavorite: () -> Void
     let onSelect: () -> Void
 
+    /// Photo-first: when a model photograph is bundled for this pose it fills
+    /// the card edge-to-edge with the title on a bottom gradient; otherwise the
+    /// rendered figure carries the card until its photo lands.
+    private var photo: UIImage? { PoseImageProvider.image(for: pose.id) }
+
     var body: some View {
         Button(action: onSelect) {
+            ZStack(alignment: .topTrailing) {
+                cardBody
+                favoriteButton
+            }
+            .background(RoundedRectangle(cornerRadius: Theme.Radius.card).fill(Theme.Colors.surface))
+            .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
+            .themedCardShadow()
+        }
+        .buttonStyle(.pressable)
+    }
+
+    @ViewBuilder
+    private var cardBody: some View {
+        if let photo {
+            ZStack(alignment: .bottomLeading) {
+                Image(uiImage: photo)
+                    .resizable()
+                    .aspectRatio(3 / 4, contentMode: .fill)
+                    .frame(maxWidth: .infinity)
+                Text(pose.title)
+                    .font(Theme.Typography.bodyEmphasis)
+                    .foregroundStyle(Theme.Colors.foreground)
+                    .padding(Theme.Spacing.m)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        LinearGradient(colors: [.clear, Theme.Colors.background.opacity(0.85)],
+                                       startPoint: .top, endPoint: .bottom)
+                    )
+            }
+        } else {
             VStack(alignment: .leading, spacing: Theme.Spacing.s) {
-                ZStack(alignment: .topTrailing) {
-                    MannequinView(pose: pose.poseVector)
-                        .padding(Theme.Spacing.s)
-                    Button {
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                        withAnimation(Theme.Motion.spring) {
-                            onFavorite()
-                        }
-                    } label: {
-                        Image(systemName: isFavorite ? "heart.fill" : "heart")
-                            .contentTransition(.symbolEffect(.replace))
-                            .font(Theme.Icon.inline())
-                            .foregroundStyle(isFavorite ? Theme.Colors.accent : Theme.Colors.foreground)
-                            .padding(Theme.Spacing.s)
-                    }
-                    .buttonStyle(.pressable)
-                }
+                MannequinView(pose: pose.poseVector)
+                    .padding(Theme.Spacing.s)
                 Text(pose.title)
                     .font(Theme.Typography.bodyEmphasis)
                     .foregroundStyle(Theme.Colors.foreground)
                     .padding([.horizontal, .bottom], Theme.Spacing.m)
             }
-            .background(RoundedRectangle(cornerRadius: Theme.Radius.card).fill(Theme.Colors.surface))
-            .themedCardShadow()
+        }
+    }
+
+    private var favoriteButton: some View {
+        Button {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            withAnimation(Theme.Motion.spring) {
+                onFavorite()
+            }
+        } label: {
+            Image(systemName: isFavorite ? "heart.fill" : "heart")
+                .contentTransition(.symbolEffect(.replace))
+                .font(Theme.Icon.inline())
+                .foregroundStyle(isFavorite ? Theme.Colors.accent : Theme.Colors.foreground)
+                .padding(Theme.Spacing.s)
+                .background(Circle().fill(Theme.Colors.hudChip).padding(2))
         }
         .buttonStyle(.pressable)
     }

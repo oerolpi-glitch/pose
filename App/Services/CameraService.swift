@@ -1,4 +1,5 @@
 import AVFoundation
+import os
 
 protocol CameraServicing: AnyObject {
     var session: AVCaptureSession { get }
@@ -15,7 +16,11 @@ protocol CameraServicing: AnyObject {
 /// Owns the AVCaptureSession. All session mutations happen on `sessionQueue`.
 final class CameraService: NSObject, CameraServicing {
     let session = AVCaptureSession()
-    private(set) var isFront = false
+
+    /// Written on `sessionQueue`, read from the main actor every frame, so it
+    /// needs its own synchronization rather than the queue's.
+    private let frontFacing = OSAllocatedUnfairLock(initialState: false)
+    var isFront: Bool { frontFacing.withLock { $0 } }
 
     private let sessionQueue = DispatchQueue(label: "pose.camera.session")
     private let videoOutput = AVCaptureVideoDataOutput()
@@ -47,7 +52,7 @@ final class CameraService: NSObject, CameraServicing {
                 if session.canAddOutput(videoOutput) { session.addOutput(videoOutput) }
                 if session.canAddOutput(photoOutput) { session.addOutput(photoOutput) }
 
-                configureVideoConnection()
+                configureConnections(isFront: false)
                 session.commitConfiguration()
                 cont.resume(returning: true)
             }
@@ -78,29 +83,46 @@ final class CameraService: NSObject, CameraServicing {
             if session.canAddInput(input) {
                 session.addInput(input)
                 currentInput = input
-                isFront = (newPosition == .front)
+                frontFacing.withLock { $0 = (newPosition == .front) }
             } else {
                 session.addInput(old)
             }
-            configureVideoConnection()
+            configureConnections(isFront: frontFacing.withLock { $0 })
             session.commitConfiguration()
         }
     }
 
-    /// Pins the video-data-output connection to portrait, unmirrored buffers.
-    /// Vision must always see raw sensor orientation: mirroring for the front
-    /// camera is applied once, by CoordinateMapper, so that the skeleton and the
-    /// score agree with what the preview layer shows. Leaving AVFoundation's
-    /// automatic mirroring on would apply it twice.
+    /// Pins both output connections to portrait and to an explicit mirroring
+    /// state. Only AVCaptureVideoPreviewLayer mirrors the front camera on its
+    /// own; the data and photo outputs deliver raw sensor orientation. So:
+    ///
+    /// - Data output stays unmirrored. Vision always sees the sensor, and
+    ///   CoordinateMapper applies the front-camera flip exactly once, which is
+    ///   what keeps the skeleton and the score agreeing with the preview.
+    /// - Photo output mirrors to match the front-camera preview. The user
+    ///   framed the shot against a mirrored preview and a ghost overlay;
+    ///   saving the unmirrored sensor image would hand back a photo flipped
+    ///   from the one they composed.
+    ///
     /// Must be called inside a session configuration block on `sessionQueue`.
-    private func configureVideoConnection() {
-        guard let conn = videoOutput.connection(with: .video) else { return }
-        if conn.isVideoRotationAngleSupported(90) {
-            conn.videoRotationAngle = 90
+    private func configureConnections(isFront: Bool) {
+        if let conn = videoOutput.connection(with: .video) {
+            if conn.isVideoRotationAngleSupported(90) {
+                conn.videoRotationAngle = 90
+            }
+            if conn.isVideoMirroringSupported {
+                conn.automaticallyAdjustsVideoMirroring = false
+                conn.isVideoMirrored = false
+            }
         }
-        if conn.isVideoMirroringSupported {
-            conn.automaticallyAdjustsVideoMirroring = false
-            conn.isVideoMirrored = false
+        if let conn = photoOutput.connection(with: .video) {
+            if conn.isVideoRotationAngleSupported(90) {
+                conn.videoRotationAngle = 90
+            }
+            if conn.isVideoMirroringSupported {
+                conn.automaticallyAdjustsVideoMirroring = false
+                conn.isVideoMirrored = isFront
+            }
         }
     }
 

@@ -10,12 +10,15 @@ struct CameraScreen: View {
         _viewModel = StateObject(wrappedValue: CameraViewModel(mode: mode, targetPose: initialPose))
     }
 
-    /// What the bottom hint bubble should read. A missing body is a designed
-    /// state of its own, distinct from (and taking priority over) a scoring hint.
+    /// The bottom bubble carries coaching only. A missing body gets its own
+    /// centered treatment instead, so coaching text never competes with it.
     private var displayHint: String? {
-        guard !viewModel.permissionDenied else { return nil }
-        guard viewModel.bodyDetected else { return "step into frame" }
+        guard !viewModel.permissionDenied, viewModel.bodyDetected else { return nil }
         return viewModel.hintText
+    }
+
+    private var isSearchingForBody: Bool {
+        !viewModel.permissionDenied && !viewModel.bodyDetected && viewModel.capturedImage == nil
     }
 
     var body: some View {
@@ -35,6 +38,11 @@ struct CameraScreen: View {
                 SkeletonOverlay(segments: viewModel.liveSegments)
                     .ignoresSafeArea()
 
+                if isSearchingForBody {
+                    searchingForBodyView
+                        .transition(.opacity.combined(with: .scale(scale: 0.96)))
+                }
+
                 VStack {
                     topBar
                     Spacer()
@@ -52,6 +60,7 @@ struct CameraScreen: View {
                         .transition(.opacity)
                 }
             }
+            .animation(Theme.Motion.spring, value: isSearchingForBody)
             .task {
                 await viewModel.start(viewSize: geo.size)
             }
@@ -104,6 +113,30 @@ struct CameraScreen: View {
             .buttonStyle(.pressable)
         }
         .animation(Theme.Motion.spring, value: viewModel.score)
+    }
+
+    /// Shown while no body is tracked. Deliberately calm and centered — it is a
+    /// state of the app, not a coaching correction, so it gets its own moment
+    /// rather than borrowing the hint bubble.
+    private var searchingForBodyView: some View {
+        VStack(spacing: Theme.Spacing.m) {
+            Image(systemName: "figure.stand")
+                .font(Theme.Icon.hero())
+                .foregroundStyle(Theme.Colors.onPrimary.opacity(0.9))
+                .symbolEffect(.pulse)
+            Text("step into frame")
+                .font(Theme.Typography.stepTitle)
+                .foregroundStyle(Theme.Colors.onPrimary)
+            Text("stand back until your whole body fits")
+                .font(Theme.Typography.caption)
+                .foregroundStyle(Theme.Colors.onPrimary.opacity(0.75))
+        }
+        .padding(Theme.Spacing.xl)
+        .background(
+            RoundedRectangle(cornerRadius: Theme.Radius.card)
+                .fill(Theme.Colors.primaryDark.opacity(0.45))
+        )
+        .allowsHitTesting(false)
     }
 
     private var bottomHUD: some View {

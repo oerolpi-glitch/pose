@@ -65,6 +65,10 @@ enum Theme {
         static func micro(_ weight: Font.Weight = .regular) -> Font {
             .system(size: 12, weight: weight)
         }
+        /// 44 — the single focal glyph of a full-screen state.
+        static func hero(_ weight: Font.Weight = .light) -> Font {
+            .system(size: 44, weight: weight)
+        }
     }
 
     enum Spacing {

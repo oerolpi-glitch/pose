@@ -82,7 +82,7 @@ struct CameraScreen: View {
                     .font(Theme.Icon.control())
                     .foregroundStyle(Theme.Colors.onPrimary)
                     .padding(Theme.Spacing.m)
-                    .background(Circle().fill(Theme.Colors.primaryDark.opacity(0.5)))
+                    .background(Circle().fill(Theme.Colors.hudChip))
             }
             .buttonStyle(.pressable)
 
@@ -91,11 +91,12 @@ struct CameraScreen: View {
             if let score = viewModel.score {
                 Text("\(Int(score * 100))%")
                     .font(Theme.Typography.readout)
+                    .monospacedDigit()
                     .foregroundStyle(Theme.Colors.onPrimary)
                     .contentTransition(.numericText())
                     .padding(.horizontal, Theme.Spacing.m)
                     .padding(.vertical, Theme.Spacing.s)
-                    .background(Capsule().fill(Theme.Colors.primaryDark.opacity(0.5)))
+                    .background(Capsule().fill(Theme.Colors.hudChip))
                     .transition(.opacity.combined(with: .scale(scale: 0.9)))
             }
 
@@ -108,7 +109,7 @@ struct CameraScreen: View {
                     .font(Theme.Icon.control())
                     .foregroundStyle(Theme.Colors.onPrimary)
                     .padding(Theme.Spacing.m)
-                    .background(Circle().fill(Theme.Colors.primaryDark.opacity(0.5)))
+                    .background(Circle().fill(Theme.Colors.hudChip))
             }
             .buttonStyle(.pressable)
         }
@@ -134,7 +135,7 @@ struct CameraScreen: View {
         .padding(Theme.Spacing.xl)
         .background(
             RoundedRectangle(cornerRadius: Theme.Radius.card)
-                .fill(Theme.Colors.primaryDark.opacity(0.45))
+                .fill(Theme.Colors.hudChip)
         )
         .allowsHitTesting(false)
     }
@@ -148,7 +149,7 @@ struct CameraScreen: View {
                         .foregroundStyle(Theme.Colors.onPrimary)
                         .padding(.horizontal, Theme.Spacing.m)
                         .padding(.vertical, Theme.Spacing.s)
-                        .background(Capsule().fill(Theme.Colors.primaryDark.opacity(0.6)))
+                        .background(Capsule().fill(Theme.Colors.hudChip))
                         .id(hint)
                         .transition(.opacity.combined(with: .move(edge: .bottom)))
                 }
@@ -177,7 +178,7 @@ struct CameraScreen: View {
 
     private func capturedPreview(_ image: UIImage) -> some View {
         ZStack {
-            Color.black.opacity(0.8).ignoresSafeArea()
+            Theme.Colors.scrim.ignoresSafeArea()
             VStack(spacing: Theme.Spacing.l) {
                 Image(uiImage: image)
                     .resizable()

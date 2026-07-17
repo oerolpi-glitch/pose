@@ -139,6 +139,7 @@ struct AnalyzingStep: View {
                     .rotationEffect(.degrees(-90))
                 Text("\(Int(progress * 100))%")
                     .font(Theme.Typography.screenTitle)
+                    .monospacedDigit()
                     .foregroundStyle(Theme.Colors.primaryDark)
                     .contentTransition(.numericText(value: progress * 100))
             }

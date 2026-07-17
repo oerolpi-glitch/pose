@@ -12,6 +12,7 @@ struct PillButton: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, Theme.Spacing.m + 2)
                 .background(Capsule().fill(Theme.Colors.primaryDark))
+                .themedPrimaryLift()
         }
         .buttonStyle(.pressable)
     }

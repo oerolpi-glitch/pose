@@ -15,6 +15,7 @@ struct PoseLibraryView: View {
                 Text("choose a pose")
                     .font(Theme.Typography.stepTitle)
                     .foregroundStyle(Theme.Colors.primaryDark)
+                    .padding(.top, Theme.Spacing.xl)
 
                 SearchField(placeholder: "describe your shot", text: $viewModel.query)
 
@@ -46,6 +47,7 @@ struct PoseLibraryView: View {
                 .animation(Theme.Motion.spring, value: viewModel.results.map(\.id))
             }
             .padding(.horizontal, Theme.Spacing.l)
+            .padding(.bottom, Theme.Spacing.xl)
         }
         .background(Theme.Colors.background)
         .navigationTitle("")
@@ -53,7 +55,10 @@ struct PoseLibraryView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: Theme.Spacing.s) {
+        VStack(spacing: Theme.Spacing.m) {
+            Image(systemName: "magnifyingglass")
+                .font(Theme.Icon.hero())
+                .foregroundStyle(Theme.Colors.subtitle)
             Text("no poses match")
                 .font(Theme.Typography.sectionTitle)
                 .foregroundStyle(Theme.Colors.primaryDark)
@@ -62,6 +67,7 @@ struct PoseLibraryView: View {
                 .foregroundStyle(Theme.Colors.subtitle)
         }
         .frame(maxWidth: .infinity)
+        .padding(.top, Theme.Spacing.xl * 2)
         .padding(.top, Theme.Spacing.xl)
     }
 }

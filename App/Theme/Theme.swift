@@ -15,6 +15,15 @@ enum Theme {
         static let surface = Color(red: 0.937, green: 0.902, blue: 0.847)      // #EFE6D8
         /// Text/icons on top of primaryDark.
         static let onPrimary = Color(red: 0.961, green: 0.937, blue: 0.902)
+        /// Warm near-black dimming layer behind full-screen overlays (captured
+        /// photo, modals). Warmer than pure black, on-brand.
+        static let scrim = primaryDark.opacity(0.85)
+        /// Hairline edge that crisps low-contrast cards against the page.
+        static let hairline = primaryDark.opacity(0.06)
+        /// One consistent fill for every floating chip/control over the camera
+        /// feed, so the HUD reads as a single system rather than mismatched
+        /// opacities.
+        static let hudChip = primaryDark.opacity(0.5)
     }
 
     /// Semantic type scale. Views name the role, never a size.
@@ -94,8 +103,21 @@ enum Theme {
 }
 
 extension View {
-    /// Soft editorial card shadow.
+    /// Soft editorial card shadow plus a hairline edge. Card surface and page
+    /// differ by only ~3% luminance, so the shadow alone reads muddy; the
+    /// hairline gives a crisp, first-party separation. Applied over the same
+    /// corner radius the card fills with.
     func themedCardShadow() -> some View {
-        shadow(color: Theme.Colors.primaryDark.opacity(0.08), radius: 12, x: 0, y: 4)
+        self
+            .overlay(
+                RoundedRectangle(cornerRadius: Theme.Radius.card)
+                    .strokeBorder(Theme.Colors.hairline, lineWidth: 1)
+            )
+            .shadow(color: Theme.Colors.primaryDark.opacity(0.08), radius: 12, x: 0, y: 4)
+    }
+
+    /// Lift for the primary call-to-action so it rises off the page.
+    func themedPrimaryLift() -> some View {
+        shadow(color: Theme.Colors.primaryDark.opacity(0.18), radius: 10, x: 0, y: 4)
     }
 }

@@ -7,6 +7,11 @@ enum OnboardingStep: Int, CaseIterable {
     var next: OnboardingStep? {
         OnboardingStep(rawValue: rawValue + 1)
     }
+
+    /// 0...1 position through the flow, for the progress indicator.
+    var progress: Double {
+        Double(rawValue + 1) / Double(OnboardingStep.allCases.count)
+    }
 }
 
 final class OnboardingViewModel: ObservableObject {

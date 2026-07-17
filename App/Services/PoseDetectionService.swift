@@ -20,7 +20,7 @@ final class PoseDetectionService: NSObject, AVCaptureVideoDataOutputSampleBuffer
     private var frameCounter = 0
     private let minimumConfidence: Float = 0.3
 
-    private static let jointMap: [VNHumanBodyPoseObservation.JointName: Joint] = [
+    private static let jointMap: [VNHumanBodyPoseObservation.JointName: PoseKit.Joint] = [
         .nose: .nose, .leftEye: .leftEye, .rightEye: .rightEye,
         .leftEar: .leftEar, .rightEar: .rightEar, .neck: .neck,
         .leftShoulder: .leftShoulder, .rightShoulder: .rightShoulder,
@@ -64,7 +64,7 @@ final class PoseDetectionService: NSObject, AVCaptureVideoDataOutputSampleBuffer
             return
         }
 
-        var points: [Joint: SIMD2<Float>] = [:]
+        var points: [PoseKit.Joint: SIMD2<Float>] = [:]
         for (vnJoint, joint) in Self.jointMap {
             guard let p = recognized[vnJoint], p.confidence >= minimumConfidence else { continue }
             points[joint] = SIMD2<Float>(Float(p.location.x), Float(p.location.y))

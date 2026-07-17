@@ -10,7 +10,7 @@ struct ModeCard: View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: Theme.Spacing.s) {
                 Image(systemName: systemImage)
-                    .font(.system(size: 24, weight: .semibold))
+                    .font(Theme.Icon.feature())
                     .foregroundStyle(Theme.Colors.primaryDark)
                 Spacer(minLength: 0)
                 Text(title)
@@ -39,7 +39,7 @@ struct WideCard: View {
         Button(action: action) {
             HStack(spacing: Theme.Spacing.m) {
                 Image(systemName: systemImage)
-                    .font(.system(size: 24, weight: .semibold))
+                    .font(Theme.Icon.feature())
                     .foregroundStyle(Theme.Colors.primaryDark)
                 VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
                     Text(title)
@@ -51,7 +51,7 @@ struct WideCard: View {
                 }
                 Spacer()
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 14, weight: .regular))
+                    .font(Theme.Icon.accessory())
                     .foregroundStyle(Theme.Colors.subtitle)
             }
             .padding(Theme.Spacing.m)

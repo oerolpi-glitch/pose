@@ -43,6 +43,22 @@ enum Theme {
         }
     }
 
+    /// SF Symbol sizes. Weights are matched to the adjacent text at each call site.
+    enum Icon {
+        /// 24 — feature icons on cards.
+        static func feature(_ weight: Font.Weight = .semibold) -> Font {
+            .system(size: 24, weight: weight)
+        }
+        /// 16 — inline icons beside body text.
+        static func inline(_ weight: Font.Weight = .regular) -> Font {
+            .system(size: 16, weight: weight)
+        }
+        /// 14 — accessory icons (chevrons, metadata).
+        static func accessory(_ weight: Font.Weight = .regular) -> Font {
+            .system(size: 14, weight: weight)
+        }
+    }
+
     enum Spacing {
         static let xs: CGFloat = 4
         static let s: CGFloat = 8

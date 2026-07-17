@@ -7,7 +7,7 @@ struct SearchField: View {
     var body: some View {
         HStack(spacing: Theme.Spacing.s) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 16, weight: .regular))
+                .font(Theme.Icon.inline())
                 .foregroundStyle(Theme.Colors.subtitle)
             TextField(placeholder, text: $text)
                 .font(Theme.Typography.body)

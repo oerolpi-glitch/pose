@@ -33,21 +33,22 @@ struct MannequinView: View {
             if let le = pts[.leftEar], let re = pts[.rightEar] {
                 let center = CGPoint(x: (le.x + re.x) / 2, y: (le.y + re.y) / 2)
                 let r = max(hypot(le.x - re.x, le.y - re.y) * 0.8, base)
-                drawHead(context, center: center, radius: r)
+                drawHead(context, center: center, radius: r, strokeWidth: base)
             } else if let nose = pts[.nose] {
-                drawHead(context, center: nose, radius: size.height * 0.08)
+                drawHead(context, center: nose, radius: size.height * 0.08, strokeWidth: base)
             }
         }
         .aspectRatio(3 / 4, contentMode: .fit)
     }
 
-    private func drawHead(_ context: GraphicsContext, center: CGPoint, radius: CGFloat) {
+    private func drawHead(_ context: GraphicsContext, center: CGPoint, radius: CGFloat,
+                          strokeWidth: CGFloat) {
         let rect = CGRect(x: center.x - radius, y: center.y - radius,
                           width: radius * 2, height: radius * 2)
         if fillHead {
             context.fill(Path(ellipseIn: rect), with: .color(lineColor))
         } else {
-            context.stroke(Path(ellipseIn: rect), with: .color(lineColor), lineWidth: 3)
+            context.stroke(Path(ellipseIn: rect), with: .color(lineColor), lineWidth: strokeWidth)
         }
     }
 

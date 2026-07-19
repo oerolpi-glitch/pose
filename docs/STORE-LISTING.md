@@ -46,8 +46,8 @@ close with privacy (on-device) — the one claim competitors can't match.
 >
 > Pose requires a subscription. Payment is charged to your Apple account;
 > subscriptions renew automatically unless cancelled at least 24 hours before
-> the period ends. Terms: https://oerolpi-glitch.github.io/pose-legal/terms.html
-> Privacy: https://oerolpi-glitch.github.io/pose-legal/privacy.html
+> the period ends. Terms: https://oerolpi-glitch.github.io/pose/legal/terms.html
+> Privacy: https://oerolpi-glitch.github.io/pose/legal/privacy.html
 
 ## Keywords (100 chars, comma-separated, no spaces)
 

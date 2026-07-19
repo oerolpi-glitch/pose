@@ -73,27 +73,24 @@ highest-risk item, to check first:
 - [ ] Sustained ≥30 FPS for 3+ minutes (Xcode FPS gauge); watch thermal state
       drop inference to every 2nd frame under load without the UI stalling.
 
-## 6. Design polish pass (on-device — deferred from the blind polish pass)
+## 6. Design polish pass — IMPLEMENTED, needs eyes on device
 
-These are judgment calls on values that can't be tuned without seeing them on a
-real screen. The certain-safe polish is already in; these are the finish.
+All six deferred items are now in the code (commit "launch polish"), plus an
+editorial "pose of the day" cover card on Home. What remains is visual
+verification on real hardware — tune values, don't restructure:
 
-- [ ] Camera HUD on `.ultraThinMaterial` instead of the flat `hudChip` fill —
-      floats and blurs the scene like Apple's Camera app. Tune the warm tint so
-      it doesn't read cold/grey.
-- [ ] Dynamic Type: map the `Theme.Typography` roles to `relativeTo:` text
-      styles so type scales with the user's setting. Then verify the largest
-      accessibility sizes don't overflow the `ModeCard` fixed `minHeight` or the
-      feature-row icon columns.
-- [ ] Serif display tracking: large titles (`screenTitle`, `stepTitle`) likely
-      want slight negative tracking + tightened leading at 30–36pt.
-- [ ] Shutter button: the classic two-ring Apple shutter (outer ring + gap +
-      inner disc that dips on press), concentric with the auto-capture ring.
-- [ ] Captured-photo preview: give save vs retake a real hierarchy on the dark
-      scrim (a light-context button treatment — the current secondary variant is
-      built for light backgrounds and was pulled).
-- [ ] Spacing rhythm: tighten section-header-to-content gaps and widen
-      inter-group gaps on Home and Library for a more composed rhythm.
+- [ ] HUD `.ultraThinMaterial` (themedHUD): confirm it reads warm over the
+      live feed, not cold/grey.
+- [ ] Dynamic Type now maps to text styles: verify the largest accessibility
+      sizes don't overflow `ModeCard` minHeight or feature-row columns.
+- [ ] Serif display tracking is −0.6 (themedDisplay): eyeball at 34pt.
+- [ ] Two-ring shutter (92 gold progress / 78 ring / 64 disc, 0.86 press dip):
+      check proportions against Apple Camera.
+- [ ] Captured preview: gold save vs blur retake — confirm hierarchy over a
+      bright photo.
+- [ ] Spacing rhythm on Home/Library: confirm groups read composed.
+- [ ] Pose-of-the-day cover: confirm 4:5 crop keeps the model's face in frame
+      for all 10 photos (crop is center-weighted; head sits top-third).
 
 ## TestFlight from CI (no Mac needed)
 

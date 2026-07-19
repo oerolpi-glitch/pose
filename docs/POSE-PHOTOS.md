@@ -18,13 +18,13 @@ One JPEG per pose, named exactly by pose id:
 | classic-stand      | classic-stand.jpg         | ✅ done |
 | mirror-selfie      | mirror-selfie.jpg         | ✅ done |
 | power-pose         | power-pose.jpg            | ✅ done |
-| crossed-arms       | crossed-arms.jpg          | needed  |
-| candid-walk        | candid-walk.jpg           | needed  |
-| peace-selfie       | peace-selfie.jpg          | needed  |
-| lean-wall          | lean-wall.jpg             | needed  |
-| hands-pockets      | hands-pockets.jpg         | needed  |
-| seated-casual      | seated-casual.jpg         | needed  |
-| close-up-portrait  | close-up-portrait.jpg     | needed  |
+| crossed-arms       | crossed-arms.jpg          | ✅ done |
+| candid-walk        | candid-walk.jpg           | ✅ done |
+| peace-selfie       | peace-selfie.jpg          | ✅ done |
+| lean-wall          | lean-wall.jpg             | ✅ done |
+| hands-pockets      | hands-pockets.jpg         | ✅ done |
+| seated-casual      | seated-casual.jpg         | ✅ done |
+| close-up-portrait  | close-up-portrait.jpg     | ✅ done |
 
 The `Poses` folder ships as a folder reference (see `project.yml`), so the
 `Photos/` subdirectory arrives in the bundle as-is. After adding files, run
@@ -79,10 +79,11 @@ app UI.
 
 ## Checklist to ship the photo set
 
-- [ ] 10 JPEGs named by pose id in `App/Resources/Poses/Photos/`
-- [ ] Each matches its pose JSON stance (compare against the rendered figure)
-- [ ] Consistent model/lighting/backdrop across the set
-- [ ] Total added size < 5 MB
+- [x] 10 JPEGs named by pose id in `App/Resources/Poses/Photos/` (2.1 MB total)
+- [x] Each matches its pose JSON stance (power-pose, hands-pockets,
+      seated-casual, close-up-portrait JSONs tuned to the photographed poses)
+- [x] Consistent model/lighting/backdrop across the set
+- [x] Total added size < 5 MB
 - [ ] `xcodegen` + rebuild; verify each card shows its photo, favorites heart
       still legible over imagery
 - [ ] On a real Mac, run PoseTests: `PosePhotoVerificationTests` detects the

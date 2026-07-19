@@ -101,7 +101,7 @@ struct PoseCard: View {
             ZStack(alignment: .bottomLeading) {
                 Image(uiImage: photo)
                     .resizable()
-                    .aspectRatio(3 / 4, contentMode: .fill)
+                    .aspectRatio(2 / 3, contentMode: .fill)
                     .frame(maxWidth: .infinity)
                 Text(pose.title)
                     .font(Theme.Typography.bodyEmphasis)

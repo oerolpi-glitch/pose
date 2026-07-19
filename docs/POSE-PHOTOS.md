@@ -13,18 +13,18 @@ App/Resources/Poses/Photos/<pose-id>.jpg
 
 One JPEG per pose, named exactly by pose id:
 
-| pose id            | file                      |
-|--------------------|---------------------------|
-| classic-stand      | classic-stand.jpg         |
-| mirror-selfie      | mirror-selfie.jpg         |
-| power-pose         | power-pose.jpg            |
-| crossed-arms       | crossed-arms.jpg          |
-| candid-walk        | candid-walk.jpg           |
-| peace-selfie       | peace-selfie.jpg          |
-| lean-wall          | lean-wall.jpg             |
-| hands-pockets      | hands-pockets.jpg         |
-| seated-casual      | seated-casual.jpg         |
-| close-up-portrait  | close-up-portrait.jpg     |
+| pose id            | file                      | status  |
+|--------------------|---------------------------|---------|
+| classic-stand      | classic-stand.jpg         | ✅ done |
+| mirror-selfie      | mirror-selfie.jpg         | ✅ done |
+| power-pose         | power-pose.jpg            | ✅ done |
+| crossed-arms       | crossed-arms.jpg          | needed  |
+| candid-walk        | candid-walk.jpg           | needed  |
+| peace-selfie       | peace-selfie.jpg          | needed  |
+| lean-wall          | lean-wall.jpg             | needed  |
+| hands-pockets      | hands-pockets.jpg         | needed  |
+| seated-casual      | seated-casual.jpg         | needed  |
+| close-up-portrait  | close-up-portrait.jpg     | needed  |
 
 The `Poses` folder ships as a folder reference (see `project.yml`), so the
 `Photos/` subdirectory arrives in the bundle as-is. After adding files, run
@@ -32,9 +32,15 @@ The `Poses` folder ships as a folder reference (see `project.yml`), so the
 
 ## Image spec
 
-- **Aspect:** 3:4 portrait. **Size:** 1200×1600 px (cards render @ ~350×466pt max).
+- **Aspect:** 2:3 portrait. **Size:** 1024×1536 px — the native output of the
+  generator that produced the first three; cards render 2:3 to match.
 - **Format:** JPEG, quality ~80. Keep each under ~400 KB — 10 photos should add
-  under 4 MB to the app.
+  under 4 MB to the app. (Generator PNGs are converted to JPEG on import.)
+- **Set reference:** the first three shipped photos define the set — same model
+  (shoulder-length brunette), same wardrobe (dark brown suit, satin champagne
+  cami, gold necklace), same mottled charcoal backdrop, same warm grade. Every
+  remaining photo must match them. Use one as a character/style reference image
+  when generating.
 - **Look (must match the Noir Editorial UI):** studio or editorial setting,
   moody/warm lighting, dark or neutral backdrop that sits well on `#0E0E11`.
   One model per image, full pose visible, no brand logos, no busy backgrounds.

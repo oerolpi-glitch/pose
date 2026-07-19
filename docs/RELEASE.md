@@ -95,6 +95,35 @@ real screen. The certain-safe polish is already in; these are the finish.
 - [ ] Spacing rhythm: tighten section-header-to-content gaps and widen
       inter-group gaps on Home and Library for a more composed rhythm.
 
+## TestFlight from CI (no Mac needed)
+
+`.github/workflows/release.yml` archives, signs, and uploads to TestFlight
+entirely on GitHub's macOS runners. Signing is cloud-managed — the App Store
+Connect API key lets xcodebuild create the distribution certificate and
+provisioning profile itself (`-allowProvisioningUpdates`); nothing is exported
+from a keychain and no certificate lives in repo secrets.
+
+One-time setup, all doable from a browser:
+
+1. **Enroll** in the Apple Developer Program (developer.apple.com, $99/yr).
+2. **App record**: App Store Connect → Apps → **+** → New App, platform iOS,
+   bundle ID `com.oerol.pose` (register the bundle ID when prompted), any SKU.
+   The upload fails without an existing app record.
+3. **API key**: App Store Connect → Users and Access → Integrations →
+   App Store Connect API → Team Keys → **+**. Role: **App Manager**. Download
+   the `.p8` once (it cannot be re-downloaded) and note the Key ID and the
+   Issuer ID shown at the top of the page.
+4. **GitHub secrets** (repo → Settings → Secrets and variables → Actions):
+   - `ASC_KEY_ID` — the key's ID
+   - `ASC_ISSUER_ID` — the issuer ID
+   - `ASC_PRIVATE_KEY` — full contents of the `.p8` file
+   - `APPLE_TEAM_ID` — 10-char Team ID (developer.apple.com → Membership)
+5. **Run**: repo → Actions → TestFlight → Run workflow. `CFBundleVersion` is
+   the run number, so every run is a new TestFlight build; bump the
+   `marketing_version` input when the user-facing version changes.
+6. **Install**: App Store Connect → TestFlight → add yourself as an internal
+   tester, then install via the TestFlight app on the iPhone.
+
 ## Build
 
 ```bash

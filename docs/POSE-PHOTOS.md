@@ -85,4 +85,8 @@ app UI.
 - [ ] Total added size < 5 MB
 - [ ] `xcodegen` + rebuild; verify each card shows its photo, favorites heart
       still legible over imagery
+- [ ] On a real Mac, run PoseTests: `PosePhotoVerificationTests` detects the
+      body in every bundled photo and scores it against that pose's JSON
+      (skips on GitHub CI — virtualized runners can't run Vision inference,
+      Vision error code 9)
 - [ ] License/rights confirmed for commercial App Store use

@@ -28,4 +28,11 @@ struct CoordinateMapper {
         let x = isMirrored ? 1 - p.x : p.x
         return SIMD2<Float>(Float(x), Float(1 - p.y))
     }
+
+    /// Inverse of `poseKitPoint` back into Vision space, then to view space —
+    /// used to draw PoseKit-space geometry (the aligned ghost) over the feed.
+    func viewPoint(fromPoseKitPoint p: SIMD2<Float>) -> CGPoint {
+        let visionX = isMirrored ? 1 - CGFloat(p.x) : CGFloat(p.x)
+        return viewPoint(fromVisionPoint: CGPoint(x: visionX, y: 1 - CGFloat(p.y)))
+    }
 }

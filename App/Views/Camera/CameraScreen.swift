@@ -28,11 +28,18 @@ struct CameraScreen: View {
                     .ignoresSafeArea()
 
                 if let target = viewModel.targetPose, viewModel.mode == .poseMe {
-                    MannequinView(pose: target.poseVector,
-                                  lineColor: Theme.Colors.accent.opacity(0.5),
-                                  fillHead: false)
-                        .allowsHitTesting(false)
-                        .padding(Theme.Spacing.xl)
+                    // Body tracked: the ghost is Procrustes-aligned onto the
+                    // user. Before tracking: a centered preview of the target.
+                    if viewModel.ghostSegments.isEmpty {
+                        MannequinView(pose: target.poseVector,
+                                      lineColor: Theme.Colors.accent.opacity(0.5),
+                                      fillHead: false)
+                            .allowsHitTesting(false)
+                            .padding(Theme.Spacing.xl)
+                    } else {
+                        GhostOverlay(segments: viewModel.ghostSegments)
+                            .ignoresSafeArea()
+                    }
                 }
 
                 SkeletonOverlay(segments: viewModel.liveSegments)

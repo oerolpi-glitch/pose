@@ -7,6 +7,7 @@ import PoseKit
 @MainActor
 final class CameraViewModel: NSObject, ObservableObject {
     @Published var liveSegments: [(CGPoint, CGPoint)] = []
+    @Published var ghostSegments: [(CGPoint, CGPoint)] = []
     @Published var score: Float?
     @Published var hintText: String?
     @Published var bodyDetected = true
@@ -20,6 +21,10 @@ final class CameraViewModel: NSObject, ObservableObject {
 
     private let camera: CameraServicing
     private let detector = PoseDetectionService()
+    /// One Euro smoothing on raw detector keypoints — the skeleton glides
+    /// instead of trembling with per-frame Vision noise.
+    private let poseSmoother = PoseSmoother()
+    private var scoreSmoother = ScoreSmoother()
     private let detectionQueue = DispatchQueue(label: "pose.detection", qos: .userInitiated)
     private var viewSize: CGSize = .zero
     private var holdStart: Date?
@@ -95,8 +100,10 @@ final class CameraViewModel: NSObject, ObservableObject {
         guard let pose else {
             Task { @MainActor in
                 self.liveSegments = []
+                self.ghostSegments = []
                 self.score = nil
                 self.bodyDetected = false
+                self.scoreSmoother.reset()
                 self.updateHold(score: nil)
             }
             return
@@ -105,12 +112,15 @@ final class CameraViewModel: NSObject, ObservableObject {
         Task { @MainActor in
             self.bodyDetected = true
 
+            let smoothed = self.poseSmoother.smooth(pose,
+                                                    timestamp: ProcessInfo.processInfo.systemUptime)
+
             let mapper = CoordinateMapper(bufferSize: bufferSize,
                                           viewSize: self.viewSize,
                                           isMirrored: self.camera.isFront)
             // PoseKit-space pose for scoring
             var kitPoints: [Joint: SIMD2<Float>] = [:]
-            for (j, p) in pose.points {
+            for (j, p) in smoothed.points {
                 kitPoints[j] = mapper.poseKitPoint(fromVisionPoint: CGPoint(x: CGFloat(p.x),
                                                                             y: CGFloat(p.y)))
             }
@@ -120,7 +130,7 @@ final class CameraViewModel: NSObject, ObservableObject {
             var segments: [(CGPoint, CGPoint)] = []
             for bone in Bone.allCases {
                 let (a, b) = bone.endpoints
-                guard let pa = pose.points[a], let pb = pose.points[b] else { continue }
+                guard let pa = smoothed.points[a], let pb = smoothed.points[b] else { continue }
                 segments.append((
                     mapper.viewPoint(fromVisionPoint: CGPoint(x: CGFloat(pa.x), y: CGFloat(pa.y))),
                     mapper.viewPoint(fromVisionPoint: CGPoint(x: CGFloat(pb.x), y: CGFloat(pb.y)))
@@ -130,14 +140,17 @@ final class CameraViewModel: NSObject, ObservableObject {
 
             switch self.mode {
             case .poseMe:
+                self.updateGhost(live: kitPose, mapper: mapper)
                 if let target = self.targetPose,
                    let result = PoseScorer.score(reference: target.poseVector, live: kitPose) {
-                    self.score = result.overall
+                    let display = self.scoreSmoother.smooth(result.overall)
+                    self.score = display
                     self.hintText = result.hint
-                    self.updateHold(score: result.overall)
+                    self.updateHold(score: display)
                 } else {
                     self.score = nil
                     self.hintText = nil
+                    self.scoreSmoother.reset()
                     self.updateHold(score: nil)
                 }
             case .guideMe:
@@ -145,6 +158,29 @@ final class CameraViewModel: NSObject, ObservableObject {
                 self.hintText = PostureHeuristics.hints(for: kitPose).first?.message
             }
         }
+    }
+
+    /// Projects the reference pose onto the detected body (optimal similarity
+    /// transform), so the gold ghost stands where the user stands, at their
+    /// size — matching it means adjusting limbs, not walking to the overlay.
+    private func updateGhost(live: PoseVector, mapper: CoordinateMapper) {
+        guard let target = targetPose,
+              let transform = SimilarityTransform.mapping(reference: target.poseVector,
+                                                          live: live) else {
+            ghostSegments = []
+            return
+        }
+        let reference = target.poseVector
+        var segments: [(CGPoint, CGPoint)] = []
+        for bone in Bone.allCases {
+            let (a, b) = bone.endpoints
+            guard let pa = reference.points[a], let pb = reference.points[b] else { continue }
+            segments.append((
+                mapper.viewPoint(fromPoseKitPoint: transform.apply(pa)),
+                mapper.viewPoint(fromPoseKitPoint: transform.apply(pb))
+            ))
+        }
+        ghostSegments = segments
     }
 
     private func updateHold(score: Float?) {

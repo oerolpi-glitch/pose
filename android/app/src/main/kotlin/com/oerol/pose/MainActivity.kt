@@ -6,16 +6,14 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.oerol.pose.theme.Theme
+import com.oerol.pose.data.PoseRepository
+import com.oerol.pose.ui.CameraScreen
 import com.oerol.pose.ui.HomeScreen
 import com.oerol.pose.ui.LibraryScreen
 
@@ -50,26 +48,12 @@ private fun PoseNav() {
             LibraryScreen(onSelect = { pose -> nav.navigate("camera?pose=${pose.id}") })
         }
         composable("camera?pose={pose}") { entry ->
-            // Camera + ML Kit pose detection arrive in the next phase; the
-            // route exists so every entry point already navigates correctly.
-            CameraPlaceholder(poseID = entry.arguments?.getString("pose"))
+            val context = androidx.compose.ui.platform.LocalContext.current
+            val poseID = entry.arguments?.getString("pose")
+            val target = androidx.compose.runtime.remember(poseID) {
+                poseID?.let { PoseRepository(context).pose(it) }
+            }
+            CameraScreen(targetPose = target, onClose = { nav.popBackStack() })
         }
-    }
-}
-
-@Composable
-private fun CameraPlaceholder(poseID: String?) {
-    Box(
-        Modifier
-            .fillMaxSize(),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            if (poseID != null) "camera — pose: $poseID (next phase)"
-            else "camera (next phase)",
-            style = Theme.Typography.body,
-            color = Theme.Colors.secondary,
-            modifier = Modifier.padding(Theme.Spacing.xl),
-        )
     }
 }

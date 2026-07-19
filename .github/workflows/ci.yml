@@ -22,8 +22,8 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.9"
-      - name: Kotlin PoseKit tests + Android app build
-        run: gradle -p android :posekit:test :app:assembleDebug
+      - name: Kotlin PoseKit tests + Android app tests + build
+        run: gradle -p android :posekit:test :app:testDebugUnitTest :app:assembleDebug
   app:
     runs-on: macos-15
     steps:

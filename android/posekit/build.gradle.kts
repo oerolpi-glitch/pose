@@ -3,7 +3,7 @@
 // Linux CI). The future Android app module consumes it as a project
 // dependency; org.json is provided by the Android framework at runtime.
 plugins {
-    kotlin("jvm") version "2.0.21"
+    kotlin("jvm")
 }
 
 repositories {

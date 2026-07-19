@@ -82,7 +82,7 @@ struct CameraScreen: View {
                     .font(Theme.Icon.control())
                     .foregroundStyle(Theme.Colors.foreground)
                     .padding(Theme.Spacing.m)
-                    .background(Circle().fill(Theme.Colors.hudChip))
+                    .themedHUD(Circle())
             }
             .buttonStyle(.pressable)
 
@@ -96,7 +96,7 @@ struct CameraScreen: View {
                     .contentTransition(.numericText())
                     .padding(.horizontal, Theme.Spacing.m)
                     .padding(.vertical, Theme.Spacing.s)
-                    .background(Capsule().fill(Theme.Colors.hudChip))
+                    .themedHUD(Capsule())
                     .transition(.opacity.combined(with: .scale(scale: 0.9)))
             }
 
@@ -109,7 +109,7 @@ struct CameraScreen: View {
                     .font(Theme.Icon.control())
                     .foregroundStyle(Theme.Colors.foreground)
                     .padding(Theme.Spacing.m)
-                    .background(Circle().fill(Theme.Colors.hudChip))
+                    .themedHUD(Circle())
             }
             .buttonStyle(.pressable)
         }
@@ -133,10 +133,7 @@ struct CameraScreen: View {
                 .foregroundStyle(Theme.Colors.foreground.opacity(0.75))
         }
         .padding(Theme.Spacing.xl)
-        .background(
-            RoundedRectangle(cornerRadius: Theme.Radius.card)
-                .fill(Theme.Colors.hudChip)
-        )
+        .themedHUD(RoundedRectangle(cornerRadius: Theme.Radius.card))
         .allowsHitTesting(false)
     }
 
@@ -149,29 +146,34 @@ struct CameraScreen: View {
                         .foregroundStyle(Theme.Colors.foreground)
                         .padding(.horizontal, Theme.Spacing.m)
                         .padding(.vertical, Theme.Spacing.s)
-                        .background(Capsule().fill(Theme.Colors.hudChip))
+                        .themedHUD(Capsule())
                         .id(hint)
                         .transition(.opacity.combined(with: .move(edge: .bottom)))
                 }
             }
             .animation(Theme.Motion.spring, value: displayHint)
 
+            // Classic two-ring shutter: a fixed outer ring, a gap, and an inner
+            // disc that dips on press — with the gold auto-capture progress
+            // ring drawn concentrically outside both.
             ZStack {
                 Circle()
                     .trim(from: 0, to: viewModel.autoCaptureProgress)
-                    .stroke(Theme.Colors.accent, lineWidth: 4)
+                    .stroke(Theme.Colors.accent, style: StrokeStyle(lineWidth: 4, lineCap: .round))
                     .rotationEffect(.degrees(-90))
-                    .frame(width: 84, height: 84)
+                    .frame(width: 92, height: 92)
                     .animation(Theme.Motion.spring, value: viewModel.autoCaptureProgress)
+                Circle()
+                    .strokeBorder(Theme.Colors.foreground, lineWidth: 3)
+                    .frame(width: 78, height: 78)
                 Button {
                     viewModel.capture()
                 } label: {
                     Circle()
                         .fill(Theme.Colors.foreground)
-                        .frame(width: 70, height: 70)
-                        .overlay(Circle().strokeBorder(Theme.Colors.background, lineWidth: 3))
+                        .frame(width: 64, height: 64)
                 }
-                .buttonStyle(.pressable)
+                .buttonStyle(.shutter)
             }
         }
     }
@@ -186,11 +188,11 @@ struct CameraScreen: View {
                     .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
                     .padding(Theme.Spacing.l)
                 HStack(spacing: Theme.Spacing.m) {
-                    PillButton(title: "save") {
-                        UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
+                    QuietPillButton(title: "retake") {
                         viewModel.dismissCapturedPreview()
                     }
-                    PillButton(title: "retake") {
+                    PillButton(title: "save") {
+                        UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
                         viewModel.dismissCapturedPreview()
                     }
                 }

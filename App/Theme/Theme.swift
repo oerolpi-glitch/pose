@@ -32,35 +32,30 @@ enum Theme {
         static let scrim = Color.black.opacity(0.62)
         /// Hairline edge that separates surfaces on the dark ground.
         static let hairline = foreground.opacity(0.10)
-        /// One consistent frosted fill for every floating control over the
-        /// camera feed, so the HUD reads as a single system.
-        static let hudChip = Color.black.opacity(0.38)
     }
 
-    /// Semantic type scale. Views name the role, never a size.
+    /// Semantic type scale. Views name the role, never a size. Every role maps
+    /// to a Dynamic Type text style so the whole app scales with the user's
+    /// text-size setting — except `readout`, which floats over the live camera
+    /// where Apple's own Camera controls also stay fixed.
     enum Typography {
-        /// Serif, 36 — the one big editorial statement per screen ("shoot your shot").
-        static let screenTitle = serif(36)
-        /// Serif, 30 — headers on secondary screens and onboarding steps.
-        static let stepTitle = serif(30)
-        /// Serif, 28 — numeric readouts over the camera.
-        static let readout = serif(28, weight: .semibold)
-        /// Serif, 20 — section headers and card titles.
-        static let sectionTitle = serif(20, weight: .semibold)
-        /// Sans, 16 — body copy, button labels, subtitles.
-        static let body = sans(16)
-        /// Sans, 16 semibold — emphasized body (primary button labels, hints).
-        static let bodyEmphasis = sans(16, weight: .medium)
-        /// Sans, 13 — captions and metadata.
-        static let caption = sans(13)
-
-        private static func serif(_ size: CGFloat, weight: Font.Weight = .medium) -> Font {
-            .system(size: size, weight: weight, design: .serif)
-        }
-
-        private static func sans(_ size: CGFloat, weight: Font.Weight = .regular) -> Font {
-            .system(size: size, weight: weight, design: .default)
-        }
+        /// Serif large title — the one big editorial statement per screen.
+        static let screenTitle = Font.system(.largeTitle, design: .serif, weight: .medium)
+        /// Serif title — headers on secondary screens and onboarding steps.
+        static let stepTitle = Font.system(.title, design: .serif, weight: .medium)
+        /// Serif, fixed 28 — numeric readouts over the camera (never scales).
+        static let readout = Font.system(size: 28, weight: .semibold, design: .serif)
+        /// Serif title3 — section headers and card titles.
+        static let sectionTitle = Font.system(.title3, design: .serif, weight: .semibold)
+        /// Sans callout — body copy, button labels, subtitles.
+        static let body = Font.system(.callout)
+        /// Sans callout medium — emphasized body (primary button labels, hints).
+        static let bodyEmphasis = Font.system(.callout, weight: .medium)
+        /// Sans footnote — captions and metadata.
+        static let caption = Font.system(.footnote)
+        /// Sans caption, wide tracking — tiny uppercase eyebrow labels; pair
+        /// with `.themedEyebrow()` at the call site.
+        static let eyebrow = Font.system(.caption, weight: .semibold)
     }
 
     /// SF Symbol sizes. Weights are matched to the adjacent text at each call site.
@@ -131,5 +126,25 @@ extension View {
     /// action reads as lit rather than flat on the dark ground.
     func themedPrimaryLift() -> some View {
         shadow(color: Theme.Colors.accent.opacity(0.30), radius: 12, x: 0, y: 4)
+    }
+
+    /// Display tracking for the big serif titles: system serif is tuned for
+    /// text sizes, so at 28pt+ it wants slightly tighter letterspacing to read
+    /// composed rather than airy. Apply wherever screenTitle/stepTitle is set.
+    func themedDisplay() -> some View {
+        tracking(-0.6)
+    }
+
+    /// Wide-tracked uppercase treatment for eyebrow labels above titles.
+    func themedEyebrow() -> some View {
+        tracking(2.2).textCase(.uppercase)
+    }
+
+    /// The one background for every control floating over imagery (camera HUD,
+    /// hearts over photos): system blur with a hairline edge, like Apple's own
+    /// camera chrome. Shape is passed so capsules and circles share the recipe.
+    func themedHUD<S: InsettableShape>(_ shape: S) -> some View {
+        background(.ultraThinMaterial, in: shape)
+            .overlay(shape.strokeBorder(Theme.Colors.hairline, lineWidth: 1))
     }
 }

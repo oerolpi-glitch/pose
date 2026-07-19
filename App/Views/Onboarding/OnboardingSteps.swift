@@ -19,7 +19,7 @@ struct IntroStep: View {
                     .opacity(hasAppeared ? 1 : 0)
             }
             Text("never freeze in front of a camera again")
-                .font(Theme.Typography.screenTitle)
+                .font(Theme.Typography.screenTitle).themedDisplay()
                 .foregroundStyle(Theme.Colors.foreground)
                 .multilineTextAlignment(.center)
             Text("real-time AI coaching that guides you into your best pose, every single shot")
@@ -47,7 +47,7 @@ struct GoalsStep: View {
         ScrollView {
             VStack(alignment: .leading, spacing: Theme.Spacing.l) {
                 Text("what do you struggle with most in photos?")
-                    .font(Theme.Typography.stepTitle)
+                    .font(Theme.Typography.stepTitle).themedDisplay()
                     .foregroundStyle(Theme.Colors.foreground)
                     .padding(.top, Theme.Spacing.xl)
 
@@ -138,7 +138,7 @@ struct AnalyzingStep: View {
                             style: StrokeStyle(lineWidth: 10, lineCap: .round))
                     .rotationEffect(.degrees(-90))
                 Text("\(Int(progress * 100))%")
-                    .font(Theme.Typography.screenTitle)
+                    .font(Theme.Typography.screenTitle).themedDisplay()
                     .monospacedDigit()
                     .foregroundStyle(Theme.Colors.foreground)
                     .contentTransition(.numericText(value: progress * 100))
@@ -184,7 +184,7 @@ struct SocialProofStep: View {
         ScrollView {
             VStack(alignment: .leading, spacing: Theme.Spacing.l) {
                 Text("you're in good company")
-                    .font(Theme.Typography.stepTitle)
+                    .font(Theme.Typography.stepTitle).themedDisplay()
                     .foregroundStyle(Theme.Colors.foreground)
                     .padding(.top, Theme.Spacing.xl)
 
@@ -233,7 +233,7 @@ struct FeatureRevealStep: View {
         ScrollView {
             VStack(alignment: .leading, spacing: Theme.Spacing.l) {
                 Text("here's what you get")
-                    .font(Theme.Typography.stepTitle)
+                    .font(Theme.Typography.stepTitle).themedDisplay()
                     .foregroundStyle(Theme.Colors.foreground)
                     .padding(.top, Theme.Spacing.xl)
 
@@ -275,7 +275,7 @@ struct CustomPlanStep: View {
         ScrollView {
             VStack(alignment: .leading, spacing: Theme.Spacing.l) {
                 Text("your plan is ready")
-                    .font(Theme.Typography.stepTitle)
+                    .font(Theme.Typography.stepTitle).themedDisplay()
                     .foregroundStyle(Theme.Colors.foreground)
                     .padding(.top, Theme.Spacing.xl)
 

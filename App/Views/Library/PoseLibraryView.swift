@@ -11,13 +11,15 @@ struct PoseLibraryView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: Theme.Spacing.l) {
+            VStack(alignment: .leading, spacing: 0) {
                 Text("choose a pose")
                     .font(Theme.Typography.stepTitle)
+                    .themedDisplay()
                     .foregroundStyle(Theme.Colors.foreground)
                     .padding(.top, Theme.Spacing.xl)
 
                 SearchField(placeholder: "describe your shot", text: $viewModel.query)
+                    .padding(.top, Theme.Spacing.m)
 
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: Theme.Spacing.s) {
@@ -28,6 +30,7 @@ struct PoseLibraryView: View {
                         }
                     }
                 }
+                .padding(.top, Theme.Spacing.m)
 
                 Group {
                     if viewModel.results.isEmpty {
@@ -44,6 +47,7 @@ struct PoseLibraryView: View {
                         }
                     }
                 }
+                .padding(.top, Theme.Spacing.l)
                 .animation(Theme.Motion.spring, value: viewModel.results.map(\.id))
             }
             .padding(.horizontal, Theme.Spacing.l)
@@ -104,12 +108,13 @@ struct PoseCard: View {
                     .aspectRatio(2 / 3, contentMode: .fill)
                     .frame(maxWidth: .infinity)
                 Text(pose.title)
-                    .font(Theme.Typography.bodyEmphasis)
+                    .font(Theme.Typography.sectionTitle)
                     .foregroundStyle(Theme.Colors.foreground)
                     .padding(Theme.Spacing.m)
+                    .padding(.top, Theme.Spacing.l)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(
-                        LinearGradient(colors: [.clear, Theme.Colors.background.opacity(0.85)],
+                        LinearGradient(colors: [.clear, Theme.Colors.background.opacity(0.9)],
                                        startPoint: .top, endPoint: .bottom)
                     )
             }
@@ -137,7 +142,8 @@ struct PoseCard: View {
                 .font(Theme.Icon.inline())
                 .foregroundStyle(isFavorite ? Theme.Colors.accent : Theme.Colors.foreground)
                 .padding(Theme.Spacing.s)
-                .background(Circle().fill(Theme.Colors.hudChip).padding(2))
+                .themedHUD(Circle())
+                .padding(Theme.Spacing.xs)
         }
         .buttonStyle(.pressable)
     }

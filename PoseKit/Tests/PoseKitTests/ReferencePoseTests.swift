@@ -30,4 +30,23 @@ final class ReferencePoseTests: XCTestCase {
         let pose = try JSONDecoder().decode(ReferencePose.self, from: json)
         XCTAssertEqual(pose.poseVector.points.count, 1) // tail unknown, neck malformed
     }
+
+    func testDecodesCollectionsAndFree() throws {
+        let json = """
+        {"id":"x","title":"x","tags":["a"],"collections":["dating","fullbody"],
+         "free":true,"joints":{"nose":[0.5,0.1]}}
+        """.data(using: .utf8)!
+        let pose = try JSONDecoder().decode(ReferencePose.self, from: json)
+        XCTAssertEqual(pose.collections, ["dating", "fullbody"])
+        XCTAssertTrue(pose.free)
+    }
+
+    func testLegacyJsonDefaultsCollectionsEmptyAndNotFree() throws {
+        let json = """
+        {"id":"x","title":"x","tags":["a"],"joints":{"nose":[0.5,0.1]}}
+        """.data(using: .utf8)!
+        let pose = try JSONDecoder().decode(ReferencePose.self, from: json)
+        XCTAssertEqual(pose.collections, [])
+        XCTAssertFalse(pose.free)
+    }
 }

@@ -32,4 +32,11 @@ final class AppState: ObservableObject {
     func completeOnboarding() {
         hasCompletedOnboarding = true
     }
+
+    /// Presents the Pose+ paywall for `placement`; `onGranted` runs when the
+    /// user is entitled. Whether it runs ONLY after subscribing depends on the
+    /// placement being set to Gated on the Superwall dashboard (see RELEASE.md).
+    func unlock(placement: String, onGranted: @escaping () -> Void) {
+        Superwall.shared.register(placement: placement, feature: onGranted)
+    }
 }

@@ -5,6 +5,7 @@ protocol PoseLibraryProviding {
     func allPoses() -> [ReferencePose]
     func poses(matching query: String, tag: String?) -> [ReferencePose]
     func allTags() -> [String]
+    func poses(in collection: IntentCollection) -> [ReferencePose]
 }
 
 /// Loads and searches the bundled reference pose library.
@@ -34,6 +35,10 @@ final class PoseLibraryService: PoseLibraryProviding {
         let priority = ["mirror", "close-up", "selfie"]
         let all = Set(cache.flatMap(\.tags))
         return priority.filter(all.contains) + all.subtracting(priority).sorted()
+    }
+
+    func poses(in collection: IntentCollection) -> [ReferencePose] {
+        cache.filter { $0.collections.contains(collection.rawValue) }
     }
 
     private func load() -> [ReferencePose] {

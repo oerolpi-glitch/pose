@@ -110,16 +110,35 @@ struct CameraScreen: View {
 
             Spacer()
 
-            Button {
-                viewModel.switchCamera()
-            } label: {
-                Image(systemName: "arrow.triangle.2.circlepath.camera")
-                    .font(Theme.Icon.control())
-                    .foregroundStyle(Theme.Colors.foreground)
-                    .padding(Theme.Spacing.m)
-                    .themedHUD(Circle())
+            HStack(spacing: Theme.Spacing.s) {
+                if viewModel.targetPose != nil {
+                    Button {
+                        viewModel.handsFree.toggle()
+                    } label: {
+                        Text("auto")
+                            .font(Theme.Typography.bodyEmphasis)
+                            .foregroundStyle(viewModel.handsFree ? Theme.Colors.onAccent : Theme.Colors.foreground)
+                            .padding(.horizontal, Theme.Spacing.m)
+                            .padding(.vertical, Theme.Spacing.s)
+                            .background(viewModel.handsFree
+                                        ? AnyShapeStyle(Theme.Colors.accent)
+                                        : AnyShapeStyle(.ultraThinMaterial), in: Capsule())
+                            .overlay(Capsule().strokeBorder(Theme.Colors.hairline, lineWidth: 1))
+                    }
+                    .buttonStyle(.pressable)
+                }
+
+                Button {
+                    viewModel.switchCamera()
+                } label: {
+                    Image(systemName: "arrow.triangle.2.circlepath.camera")
+                        .font(Theme.Icon.control())
+                        .foregroundStyle(Theme.Colors.foreground)
+                        .padding(Theme.Spacing.m)
+                        .themedHUD(Circle())
+                }
+                .buttonStyle(.pressable)
             }
-            .buttonStyle(.pressable)
         }
         .animation(Theme.Motion.spring, value: viewModel.score)
     }

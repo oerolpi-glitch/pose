@@ -13,6 +13,10 @@ final class CameraViewModel: NSObject, ObservableObject {
     @Published var permissionDenied = false
     @Published var capturedImage: UIImage?
     @Published var isFront = false
+    /// Hands-free auto-capture. Off by default — the shutter is manual unless
+    /// the user opts in, because pose-match confidence isn't yet good enough to
+    /// fire unattended without occasional false positives.
+    @Published var handsFree = false
 
     let mode: ShootingMode
     let targetPose: ReferencePose?
@@ -38,7 +42,10 @@ final class CameraViewModel: NSObject, ObservableObject {
     /// shot fire for the same moment — this closes that window.
     private var captureInFlight = false
 
-    static let autoCaptureThreshold: Float = 0.9
+    static let autoCaptureThreshold: Float = 0.92
+    /// Every scored limb must also match this well, so the shape — not just the
+    /// Procrustes average — is right before an unattended shot fires.
+    static let autoCaptureWorstLimb: Float = 0.8
     static let autoCaptureRearm: Float = 0.7
     static let autoCaptureHoldSeconds: TimeInterval = 1.2
     static let previewDismissSeconds: TimeInterval = 3.0
@@ -135,12 +142,14 @@ final class CameraViewModel: NSObject, ObservableObject {
                     let display = self.scoreSmoother.smooth(result.overall)
                     self.score = display
                     self.hintText = result.hint
-                    self.updateHold(score: display)
+                    let worstLimb = LimbSimilarity.worstBone(reference: target.poseVector,
+                                                             live: kitPose)?.score ?? 0
+                    self.updateHold(score: display, worstLimb: worstLimb)
                 } else {
                     self.score = nil
                     self.hintText = nil
                     self.scoreSmoother.reset()
-                    self.updateHold(score: nil)
+                    self.updateHold(score: nil, worstLimb: 0)
                 }
             case .guideMe:
                 self.score = nil
@@ -149,17 +158,17 @@ final class CameraViewModel: NSObject, ObservableObject {
         }
     }
 
-    private func updateHold(score: Float?) {
+    private func updateHold(score: Float?, worstLimb: Float = 0) {
         guard mode == .poseMe else { return }
         // Re-arm once the pose is broken, so one held pose = one photo.
         if let s = score, s < Self.autoCaptureRearm { armed = true }
 
-        guard capturedImage == nil, !captureInFlight, armed else {
+        guard handsFree, capturedImage == nil, !captureInFlight, armed else {
             holdStart = nil
             autoCaptureProgress = 0
             return
         }
-        if let s = score, s >= Self.autoCaptureThreshold {
+        if let s = score, s >= Self.autoCaptureThreshold, worstLimb >= Self.autoCaptureWorstLimb {
             if holdStart == nil { holdStart = Date() }
             let held = Date().timeIntervalSince(holdStart!)
             autoCaptureProgress = min(held / Self.autoCaptureHoldSeconds, 1)

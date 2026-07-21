@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import com.oerol.posekit.LimbSimilarity
 import com.oerol.posekit.PoseScorer
 import com.oerol.posekit.PoseSmoother
 import com.oerol.posekit.PoseVector
@@ -34,6 +35,10 @@ class CameraViewModel(val targetPose: ReferencePose?) : ViewModel() {
         private set
     var bufferHeight by mutableStateOf(1920)
         private set
+    /** Hands-free auto-capture. Off by default — the shutter is manual unless
+     *  the user opts in, because pose-match confidence isn't yet good enough
+     *  to fire unattended without occasional false positives. */
+    var handsFree by mutableStateOf(false)
 
     /** Set by the screen; invoked when the hold completes. */
     var onAutoCapture: (() -> Unit)? = null
@@ -49,7 +54,10 @@ class CameraViewModel(val targetPose: ReferencePose?) : ViewModel() {
     private var armed = true
 
     companion object {
-        const val AUTO_CAPTURE_THRESHOLD = 0.9f
+        const val AUTO_CAPTURE_THRESHOLD = 0.92f
+        // Every scored limb must also match this well, so the shape — not just
+        // the Procrustes average — is right before an unattended shot fires.
+        const val AUTO_CAPTURE_WORST_LIMB = 0.8f
         const val AUTO_CAPTURE_REARM = 0.7f
         const val AUTO_CAPTURE_HOLD_MS = 1200L
     }
@@ -77,12 +85,13 @@ class CameraViewModel(val targetPose: ReferencePose?) : ViewModel() {
                 val display = scoreSmoother.smooth(result.overall)
                 score = display
                 hintText = result.hint
-                updateHold(display)
+                val worstLimb = LimbSimilarity.worstBone(targetPose.poseVector, smoothed)?.second ?: 0f
+                updateHold(display, worstLimb)
             } else {
                 score = null
                 hintText = null
                 scoreSmoother.reset()
-                updateHold(null)
+                updateHold(null, 0f)
             }
         } else {
             score = null
@@ -90,17 +99,18 @@ class CameraViewModel(val targetPose: ReferencePose?) : ViewModel() {
         }
     }
 
-    private fun updateHold(displayScore: Float?) {
+    private fun updateHold(displayScore: Float?, worstLimb: Float = 0f) {
         if (targetPose == null) return
         // Re-arm once the pose is broken, so one held pose = one photo.
         if (displayScore != null && displayScore < AUTO_CAPTURE_REARM) armed = true
 
-        if (captureBlocked || !armed) {
+        if (!handsFree || captureBlocked || !armed) {
             holdStartMs = null
             autoCaptureProgress = 0f
             return
         }
-        if (displayScore != null && displayScore >= AUTO_CAPTURE_THRESHOLD) {
+        if (displayScore != null && displayScore >= AUTO_CAPTURE_THRESHOLD &&
+            worstLimb >= AUTO_CAPTURE_WORST_LIMB) {
             val start = holdStartMs ?: SystemClock.elapsedRealtime().also { holdStartMs = it }
             val held = SystemClock.elapsedRealtime() - start
             autoCaptureProgress = (held.toFloat() / AUTO_CAPTURE_HOLD_MS).coerceAtMost(1f)

@@ -172,7 +172,10 @@ fun CameraScreen(targetPose: ReferencePose?, onClose: () -> Unit) {
             ) {
                 TopBar(
                     score = viewModel.score,
+                    handsFree = viewModel.handsFree,
+                    showHandsFree = viewModel.targetPose != null,
                     onClose = onClose,
+                    onToggleHandsFree = { viewModel.handsFree = !viewModel.handsFree },
                     onSwitch = { isFront = !isFront },
                 )
                 BottomHud(
@@ -330,7 +333,14 @@ private fun capsulePath(a: Offset, b: Offset, r: Float): Path = Path().apply {
 }
 
 @Composable
-private fun TopBar(score: Float?, onClose: () -> Unit, onSwitch: () -> Unit) {
+private fun TopBar(
+    score: Float?,
+    handsFree: Boolean,
+    showHandsFree: Boolean,
+    onClose: () -> Unit,
+    onToggleHandsFree: () -> Unit,
+    onSwitch: () -> Unit,
+) {
     Row(
         Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -347,7 +357,22 @@ private fun TopBar(score: Float?, onClose: () -> Unit, onSwitch: () -> Unit) {
                 Text("${(score * 100).toInt()}%", style = Theme.Typography.readout, color = Theme.Colors.foreground)
             }
         }
-        HudChip(onClick = onSwitch) { Text("↺", style = Theme.Typography.bodyEmphasis, color = Theme.Colors.foreground) }
+        Row(horizontalArrangement = Arrangement.spacedBy(Theme.Spacing.s),
+            verticalAlignment = Alignment.CenterVertically) {
+            if (showHandsFree) {
+                Box(
+                    Modifier
+                        .clip(CircleShape)
+                        .background(if (handsFree) Theme.Colors.accent else Color.Black.copy(alpha = 0.38f))
+                        .clickable(onClick = onToggleHandsFree)
+                        .padding(horizontal = Theme.Spacing.m, vertical = Theme.Spacing.s),
+                ) {
+                    Text("auto", style = Theme.Typography.bodyEmphasis,
+                        color = if (handsFree) Theme.Colors.onAccent else Theme.Colors.foreground)
+                }
+            }
+            HudChip(onClick = onSwitch) { Text("↺", style = Theme.Typography.bodyEmphasis, color = Theme.Colors.foreground) }
+        }
     }
 }
 

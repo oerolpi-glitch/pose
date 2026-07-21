@@ -64,6 +64,14 @@ struct HomeView: View {
                         path.append(HomeRoute.camera(.guideMe))
                     }
                     .padding(.top, Theme.Spacing.m)
+
+                    WideCard(title: "all poses",
+                             subtitle: "search the full library",
+                             systemImage: "magnifyingglass") {
+                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                        path.append(HomeRoute.allPoses)
+                    }
+                    .padding(.top, Theme.Spacing.m)
                 }
                 .padding(.horizontal, Theme.Spacing.l)
                 .padding(.bottom, Theme.Spacing.xl)

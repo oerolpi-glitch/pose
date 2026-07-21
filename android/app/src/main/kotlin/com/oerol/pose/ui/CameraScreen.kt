@@ -189,7 +189,9 @@ fun CameraScreen(targetPose: ReferencePose?, onClose: () -> Unit) {
     }
 }
 
-/** Ghost (gold, Procrustes-aligned) + live skeleton (warm white, haloed). */
+/** Ghost (gold, Procrustes-aligned) + live skeleton (warm white, haloed).
+ *  Before a body is tracked, the target pose draws as a centered preview so
+ *  the user sees what they're about to match — iOS parity. */
 @Composable
 private fun PoseOverlays(viewModel: CameraViewModel) {
     Canvas(Modifier.fillMaxSize()) {
@@ -199,6 +201,10 @@ private fun PoseOverlays(viewModel: CameraViewModel) {
             viewWidth = size.width,
             viewHeight = size.height,
         )
+        val target = viewModel.targetPose
+        if (viewModel.ghostSegments.isEmpty() && target != null) {
+            drawTargetFigure(target.poseVector.points)
+        }
         for ((a, b) in viewModel.ghostSegments) {
             val pa = mapper.viewPoint(a)
             val pb = mapper.viewPoint(b)
@@ -220,6 +226,58 @@ private fun PoseOverlays(viewModel: CameraViewModel) {
                     strokeWidth = 4.dp.toPx(), cap = StrokeCap.Round)
             }
         }
+    }
+}
+
+/** Centered figure preview of the target pose — the Android port of the iOS
+ *  MannequinView camera treatment: bones minus the nose-neck strand, plus
+ *  shoulder/hip crossbars and an outlined head, in translucent gold. */
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawTargetFigure(
+    points: Map<com.oerol.posekit.Joint, com.oerol.posekit.Vec2>,
+) {
+    if (points.isEmpty()) return
+    val minX = points.values.minOf { it.x }
+    val maxX = points.values.maxOf { it.x }
+    val minY = points.values.minOf { it.y }
+    val maxY = points.values.maxOf { it.y }
+    if (maxX <= minX || maxY <= minY) return
+
+    val inset = 0.18f
+    val fit = minOf(
+        size.width * (1 - 2 * inset) / (maxX - minX),
+        size.height * (1 - 2 * inset) / (maxY - minY),
+    )
+    val ox = (size.width - (maxX - minX) * fit) / 2
+    val oy = (size.height - (maxY - minY) * fit) / 2
+    fun place(p: com.oerol.posekit.Vec2) = Offset((p.x - minX) * fit + ox, (p.y - minY) * fit + oy)
+
+    val color = Theme.Colors.accent.copy(alpha = 0.5f)
+    val base = minOf(size.width, size.height) * 0.02f
+
+    fun stroke(a: com.oerol.posekit.Joint, b: com.oerol.posekit.Joint, width: Float) {
+        val pa = points[a] ?: return
+        val pb = points[b] ?: return
+        drawLine(color, place(pa), place(pb), strokeWidth = width, cap = StrokeCap.Round)
+    }
+
+    for (bone in Bone.entries) {
+        if (bone == Bone.NECK) continue
+        val width = if (bone == Bone.TORSO) base * 1.5f else base
+        stroke(bone.endpoints.first, bone.endpoints.second, width)
+    }
+    stroke(com.oerol.posekit.Joint.leftHip, com.oerol.posekit.Joint.rightHip, base)
+    stroke(com.oerol.posekit.Joint.leftShoulder, com.oerol.posekit.Joint.rightShoulder, base)
+
+    val le = points[com.oerol.posekit.Joint.leftEar]
+    val re = points[com.oerol.posekit.Joint.rightEar]
+    if (le != null && re != null) {
+        val pa = place(le)
+        val pb = place(re)
+        val center = Offset((pa.x + pb.x) / 2, (pa.y + pb.y) / 2)
+        val dx = pa.x - pb.x
+        val dy = pa.y - pb.y
+        val radius = maxOf(kotlin.math.sqrt(dx * dx + dy * dy) * 0.8f, base)
+        drawCircle(color, radius = radius, center = center, style = Stroke(width = base))
     }
 }
 

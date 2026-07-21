@@ -13,10 +13,19 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Accessibility
+import androidx.compose.material.icons.outlined.ChevronRight
+import androidx.compose.material.icons.outlined.GraphicEq
+import androidx.compose.material.icons.outlined.GridView
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -129,12 +138,14 @@ fun HomeScreen(
             ModeCard(
                 title = "pose me",
                 subtitle = "match a reference pose",
+                icon = Icons.Outlined.Accessibility,
                 modifier = Modifier.weight(1f),
                 onClick = onOpenLibrary,
             )
             ModeCard(
                 title = "guide me",
                 subtitle = "live posture coaching",
+                icon = Icons.Outlined.GraphicEq,
                 modifier = Modifier.weight(1f),
                 onClick = onOpenCamera,
             )
@@ -143,6 +154,7 @@ fun HomeScreen(
         WideCard(
             title = "pose library",
             subtitle = "browse poses",
+            icon = Icons.Outlined.GridView,
             onClick = onOpenLibrary,
             modifier = Modifier.padding(top = Theme.Spacing.m, bottom = Theme.Spacing.xl),
         )
@@ -168,6 +180,7 @@ fun PillButton(title: String, onClick: () -> Unit, modifier: Modifier = Modifier
 private fun ModeCard(
     title: String,
     subtitle: String,
+    icon: ImageVector,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -179,8 +192,10 @@ private fun ModeCard(
             .border(1.dp, Theme.Colors.hairline, Theme.Radius.cardShape)
             .clickable(onClick = onClick)
             .padding(Theme.Spacing.m),
-        verticalArrangement = Arrangement.Bottom,
     ) {
+        Icon(icon, contentDescription = null, tint = Theme.Colors.accent,
+            modifier = Modifier.size(24.dp))
+        Spacer(Modifier.weight(1f))
         Text(title, style = Theme.Typography.sectionTitle, color = Theme.Colors.foreground)
         Text(subtitle, style = Theme.Typography.caption, color = Theme.Colors.secondary)
     }
@@ -190,10 +205,11 @@ private fun ModeCard(
 private fun WideCard(
     title: String,
     subtitle: String,
+    icon: ImageVector,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
+    Row(
         modifier
             .fillMaxWidth()
             .clip(Theme.Radius.cardShape)
@@ -201,8 +217,16 @@ private fun WideCard(
             .border(1.dp, Theme.Colors.hairline, Theme.Radius.cardShape)
             .clickable(onClick = onClick)
             .padding(Theme.Spacing.m),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Theme.Spacing.m),
     ) {
-        Text(title, style = Theme.Typography.sectionTitle, color = Theme.Colors.foreground)
-        Text(subtitle, style = Theme.Typography.caption, color = Theme.Colors.secondary)
+        Icon(icon, contentDescription = null, tint = Theme.Colors.accent,
+            modifier = Modifier.size(24.dp))
+        Column(Modifier.weight(1f)) {
+            Text(title, style = Theme.Typography.sectionTitle, color = Theme.Colors.foreground)
+            Text(subtitle, style = Theme.Typography.caption, color = Theme.Colors.secondary)
+        }
+        Icon(Icons.Outlined.ChevronRight, contentDescription = null,
+            tint = Theme.Colors.secondary, modifier = Modifier.size(18.dp))
     }
 }

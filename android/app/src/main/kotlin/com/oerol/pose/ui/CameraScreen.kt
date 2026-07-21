@@ -40,6 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathOperation
@@ -50,12 +51,15 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.oerol.pose.camera.CameraViewModel
 import com.oerol.pose.camera.CoordinateMapper
 import com.oerol.pose.camera.PoseAnalyzer
+import com.oerol.pose.data.PoseRepository
 import com.oerol.pose.theme.Theme
 import com.oerol.posekit.Joint
 import com.oerol.posekit.ReferencePose
@@ -151,7 +155,10 @@ fun CameraScreen(targetPose: ReferencePose?, onClose: () -> Unit) {
         if (hasPermission) {
             AndroidView(factory = { previewView }, modifier = Modifier.fillMaxSize())
 
-            PoseOverlays(viewModel)
+            val ghostBitmap = remember(viewModel.targetPose) {
+                viewModel.targetPose?.let { PoseRepository(context).ghost(it.id) }
+            }
+            PoseOverlays(viewModel, ghostBitmap)
 
             if (!viewModel.bodyDetected && capturedBitmap == null) {
                 SearchingCard(Modifier.align(Alignment.Center))
@@ -200,12 +207,29 @@ fun CameraScreen(targetPose: ReferencePose?, onClose: () -> Unit) {
  *  it is Procrustes-projected onto the user; before that it sits centered as a
  *  preview of the pose to match. Only shown in pose-me (a target exists). */
 @Composable
-private fun PoseOverlays(viewModel: CameraViewModel) {
+private fun PoseOverlays(viewModel: CameraViewModel, ghost: Bitmap?) {
     Canvas(Modifier.fillMaxSize()) {
         val target = viewModel.targetPose ?: return@Canvas
-        // A fixed, centered silhouette to align into — the score is pose-
-        // invariant, so the user can stand anywhere and match the shape.
-        drawBodyGhost(centeredGhost(target.poseVector.points))
+        if (ghost != null) {
+            // Photogenik-style guide: dim the live feed, then lay the ivory
+            // mannequin (already brightness-keyed to alpha) over it so the
+            // figure glows and the black falls away. Centered, aspect-fit.
+            drawRect(Color.Black, alpha = 0.4f)
+            val img = ghost.asImageBitmap()
+            val scale = min(size.width / img.width, size.height / img.height) * 0.92f
+            val w = (img.width * scale)
+            val h = (img.height * scale)
+            drawImage(
+                image = img,
+                srcOffset = IntOffset.Zero,
+                srcSize = IntSize(img.width, img.height),
+                dstOffset = IntOffset(((size.width - w) / 2).toInt(), ((size.height - h) / 2).toInt()),
+                dstSize = IntSize(w.toInt(), h.toInt()),
+            )
+        } else {
+            // Fallback until a mannequin ghost is bundled: a drawn silhouette.
+            drawBodyGhost(centeredGhost(target.poseVector.points))
+        }
     }
 }
 

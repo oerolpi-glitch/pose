@@ -5,6 +5,39 @@ checks `PoseImageProvider` for a bundled photograph per pose and falls back to
 the rendered figure until one exists. Dropping correctly named files in one
 folder upgrades the whole library — no code changes.
 
+Two image sets per pose, same 10 ids:
+1. **Photos** (`Poses/Photos/<id>.jpg`) — the real editorial model, shown on
+   the library cards. Premium browse imagery.
+2. **Ghosts** (`Poses/Ghosts/<id>.jpg`) — an ivory 3D-mannequin render of the
+   same pose, shown in the camera as the alignment guide over the live feed.
+   See "Ghost mannequins" below.
+
+## Ghost mannequins — the in-camera pose guide
+
+Photogenik's camera guide is a smooth ivory 3D mannequin (not a silhouette or
+wireframe). The app expects one per pose at `App/Resources/Poses/Ghosts/<id>.jpg`,
+authored on a **pure black background**. On load the app keys brightness to
+alpha (gamma 2), so the black falls away and the figure glows softly over the
+dimmed camera feed — no hard cut-out edge, no transparency needed in the file.
+Missing ghost → the app draws a filled silhouette fallback.
+
+Generate by **img2img from each existing `Photos/<id>.jpg`** (guarantees the
+exact pose, proportions, and framing):
+
+> Convert the person in this photo into a smooth, featureless 3D display
+> mannequin sculpture in the EXACT same pose, body proportions, and framing.
+> Matte ivory / warm off-white material, seamless glossy-matte surface like a
+> high-end artist figure. Soft studio lighting, gentle shadows, subtle rim glow
+> around the form. Smooth minimal facial features, no hair, no clothing, no
+> texture, no logos. PURE BLACK background (#000000). Photorealistic 3D render,
+> subject centered, portrait 2:3, 1024x1536.
+
+Ship checklist for the ghost set:
+- [ ] 10 JPEGs named by pose id in `App/Resources/Poses/Ghosts/`
+- [ ] Pure black background, ivory figure, same pose as the matching photo
+- [ ] Consistent mannequin material/lighting across the set
+- [ ] Verify in-app: figure glows centered over the camera, black gone
+
 ## Where files go
 
 ```

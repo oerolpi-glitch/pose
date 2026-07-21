@@ -48,4 +48,32 @@ class PoseRepository(private val context: Context) {
             context.assets.open("Photos/$id.jpg").use(BitmapFactory::decodeStream)
         }.getOrNull()
     }
+
+    /** Ivory 3D-mannequin pose guide, or null when none is bundled — the
+     *  in-camera "ghost". Authored on a black background; brightness is keyed
+     *  to alpha here (gamma 2) so the black falls away and the figure glows
+     *  softly over the live feed, no hard cut-out edge. */
+    fun ghost(id: String): Bitmap? = ghostCache.getOrPut(id) {
+        runCatching {
+            val src = context.assets.open("Ghosts/$id.jpg").use(BitmapFactory::decodeStream)
+            val w = src.width
+            val h = src.height
+            val px = IntArray(w * h)
+            src.getPixels(px, 0, w, 0, 0, w, h)
+            for (i in px.indices) {
+                val c = px[i]
+                val r = (c shr 16) and 0xFF
+                val g = (c shr 8) and 0xFF
+                val b = c and 0xFF
+                val lum = (r * 0.299 + g * 0.587 + b * 0.114) / 255.0
+                val a = (lum * lum * 255.0).toInt().coerceIn(0, 255)
+                px[i] = (a shl 24) or (r shl 16) or (g shl 8) or b
+            }
+            Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888).apply {
+                setPixels(px, 0, w, 0, 0, w, h)
+            }
+        }.getOrNull()
+    }
+
+    private val ghostCache = mutableMapOf<String, Bitmap?>()
 }

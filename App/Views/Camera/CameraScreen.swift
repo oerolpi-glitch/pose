@@ -28,11 +28,22 @@ struct CameraScreen: View {
                     .ignoresSafeArea()
 
                 if let target = viewModel.targetPose, viewModel.mode == .poseMe {
-                    // A fixed, centered silhouette to align into — a translucent
-                    // filled body, not a wireframe. The score is pose-invariant,
-                    // so the user matches the shape from anywhere in frame.
-                    GhostFigure(pose: target.poseVector)
-                        .ignoresSafeArea()
+                    if let ghost = PoseImageProvider.ghost(for: target.id) {
+                        // Photogenik-style guide: dim the feed, then the ivory
+                        // mannequin (brightness-keyed to alpha) glows over it.
+                        Theme.Colors.scrim.opacity(0.65).ignoresSafeArea()
+                        Image(uiImage: ghost)
+                            .resizable()
+                            .scaledToFit()
+                            .padding(Theme.Spacing.xl)
+                            .allowsHitTesting(false)
+                    } else {
+                        // Fallback until a mannequin ghost is bundled: a filled
+                        // silhouette. The score is pose-invariant, so the user
+                        // matches the shape from anywhere in frame.
+                        GhostFigure(pose: target.poseVector)
+                            .ignoresSafeArea()
+                    }
                 }
 
                 if isSearchingForBody {

@@ -5,15 +5,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
-import com.oerol.posekit.Bone
 import com.oerol.posekit.PoseScorer
 import com.oerol.posekit.PoseSmoother
 import com.oerol.posekit.PoseVector
 import com.oerol.posekit.PostureHeuristics
 import com.oerol.posekit.ReferencePose
 import com.oerol.posekit.ScoreSmoother
-import com.oerol.posekit.SimilarityTransform
-import com.oerol.posekit.Vec2
 
 /**
  * Mirrors the iOS CameraViewModel: smooths detector output, scores against the
@@ -24,8 +21,6 @@ import com.oerol.posekit.Vec2
 class CameraViewModel(val targetPose: ReferencePose?) : ViewModel() {
 
     var livePose by mutableStateOf<PoseVector?>(null)
-        private set
-    var ghostSegments by mutableStateOf<List<Pair<Vec2, Vec2>>>(emptyList())
         private set
     var score by mutableStateOf<Float?>(null)
         private set
@@ -48,10 +43,15 @@ class CameraViewModel(val targetPose: ReferencePose?) : ViewModel() {
     private val poseSmoother = PoseSmoother()
     private val scoreSmoother = ScoreSmoother()
     private var holdStartMs: Long? = null
+    /** Auto-capture fires once per matched pose; it re-arms only after the
+     *  score drops back below REARM (you break the pose), so holding a good
+     *  pose takes exactly one photo instead of a burst. */
+    private var armed = true
 
     companion object {
-        const val AUTO_CAPTURE_THRESHOLD = 0.85f
-        const val AUTO_CAPTURE_HOLD_MS = 1000L
+        const val AUTO_CAPTURE_THRESHOLD = 0.9f
+        const val AUTO_CAPTURE_REARM = 0.7f
+        const val AUTO_CAPTURE_HOLD_MS = 1200L
     }
 
     fun onFrame(pose: PoseVector?, width: Int, height: Int) {
@@ -60,7 +60,6 @@ class CameraViewModel(val targetPose: ReferencePose?) : ViewModel() {
 
         if (pose == null) {
             livePose = null
-            ghostSegments = emptyList()
             score = null
             bodyDetected = false
             scoreSmoother.reset()
@@ -73,7 +72,6 @@ class CameraViewModel(val targetPose: ReferencePose?) : ViewModel() {
         livePose = smoothed
 
         if (targetPose != null) {
-            updateGhost(smoothed)
             val result = PoseScorer.score(targetPose.poseVector, smoothed)
             if (result != null) {
                 val display = scoreSmoother.smooth(result.overall)
@@ -92,27 +90,12 @@ class CameraViewModel(val targetPose: ReferencePose?) : ViewModel() {
         }
     }
 
-    /** Projects the reference pose onto the detected body — the gold ghost
-     *  stands where the user stands, at their size. */
-    private fun updateGhost(live: PoseVector) {
-        val target = targetPose ?: return
-        val transform = SimilarityTransform.mapping(target.poseVector, live)
-        if (transform == null) {
-            ghostSegments = emptyList()
-            return
-        }
-        val reference = target.poseVector
-        ghostSegments = Bone.entries.mapNotNull { bone ->
-            val (a, b) = bone.endpoints
-            val pa = reference.points[a] ?: return@mapNotNull null
-            val pb = reference.points[b] ?: return@mapNotNull null
-            transform.apply(pa) to transform.apply(pb)
-        }
-    }
-
     private fun updateHold(displayScore: Float?) {
         if (targetPose == null) return
-        if (captureBlocked) {
+        // Re-arm once the pose is broken, so one held pose = one photo.
+        if (displayScore != null && displayScore < AUTO_CAPTURE_REARM) armed = true
+
+        if (captureBlocked || !armed) {
             holdStartMs = null
             autoCaptureProgress = 0f
             return
@@ -124,6 +107,7 @@ class CameraViewModel(val targetPose: ReferencePose?) : ViewModel() {
             if (held >= AUTO_CAPTURE_HOLD_MS) {
                 holdStartMs = null
                 autoCaptureProgress = 0f
+                armed = false // won't fire again until the pose breaks and re-arms
                 onAutoCapture?.invoke()
             }
         } else {

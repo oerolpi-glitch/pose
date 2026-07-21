@@ -39,9 +39,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathOperation
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -53,8 +57,10 @@ import com.oerol.pose.camera.CameraViewModel
 import com.oerol.pose.camera.CoordinateMapper
 import com.oerol.pose.camera.PoseAnalyzer
 import com.oerol.pose.theme.Theme
-import com.oerol.posekit.Bone
+import com.oerol.posekit.Joint
 import com.oerol.posekit.ReferencePose
+import com.oerol.posekit.Vec2
+import kotlin.math.hypot
 import kotlin.math.min
 
 /** The live coaching camera — Android port of the iOS CameraScreen. */
@@ -189,95 +195,113 @@ fun CameraScreen(targetPose: ReferencePose?, onClose: () -> Unit) {
     }
 }
 
-/** Ghost (gold, Procrustes-aligned) + live skeleton (warm white, haloed).
- *  Before a body is tracked, the target pose draws as a centered preview so
- *  the user sees what they're about to match — iOS parity. */
+/** The pose ghost: a translucent, filled human silhouette (warm-white body,
+ *  gold edge) the user aligns into — not a wireframe. When a body is tracked
+ *  it is Procrustes-projected onto the user; before that it sits centered as a
+ *  preview of the pose to match. Only shown in pose-me (a target exists). */
 @Composable
 private fun PoseOverlays(viewModel: CameraViewModel) {
     Canvas(Modifier.fillMaxSize()) {
-        val mapper = CoordinateMapper(
-            bufferWidth = viewModel.bufferWidth.toFloat(),
-            bufferHeight = viewModel.bufferHeight.toFloat(),
-            viewWidth = size.width,
-            viewHeight = size.height,
-        )
-        val target = viewModel.targetPose
-        if (viewModel.ghostSegments.isEmpty() && target != null) {
-            drawTargetFigure(target.poseVector.points)
-        }
-        for ((a, b) in viewModel.ghostSegments) {
-            val pa = mapper.viewPoint(a)
-            val pb = mapper.viewPoint(b)
-            drawLine(Color.Black.copy(alpha = 0.30f), Offset(pa.x, pa.y), Offset(pb.x, pb.y),
-                strokeWidth = 8.dp.toPx(), cap = StrokeCap.Round)
-            drawLine(Theme.Colors.accent.copy(alpha = 0.75f), Offset(pa.x, pa.y), Offset(pb.x, pb.y),
-                strokeWidth = 5.dp.toPx(), cap = StrokeCap.Round)
-        }
-        viewModel.livePose?.let { pose ->
-            for (bone in Bone.entries) {
-                val (ja, jb) = bone.endpoints
-                val a = pose.points[ja] ?: continue
-                val b = pose.points[jb] ?: continue
-                val pa = mapper.viewPoint(a)
-                val pb = mapper.viewPoint(b)
-                drawLine(Color.Black.copy(alpha = 0.45f), Offset(pa.x, pa.y), Offset(pb.x, pb.y),
-                    strokeWidth = 7.dp.toPx(), cap = StrokeCap.Round)
-                drawLine(Theme.Colors.foreground.copy(alpha = 0.95f), Offset(pa.x, pa.y), Offset(pb.x, pb.y),
-                    strokeWidth = 4.dp.toPx(), cap = StrokeCap.Round)
-            }
-        }
+        val target = viewModel.targetPose ?: return@Canvas
+        // A fixed, centered silhouette to align into — the score is pose-
+        // invariant, so the user can stand anywhere and match the shape.
+        drawBodyGhost(centeredGhost(target.poseVector.points))
     }
 }
 
-/** Centered figure preview of the target pose — the Android port of the iOS
- *  MannequinView camera treatment: bones minus the nose-neck strand, plus
- *  shoulder/hip crossbars and an outlined head, in translucent gold. */
-private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawTargetFigure(
-    points: Map<com.oerol.posekit.Joint, com.oerol.posekit.Vec2>,
-) {
-    if (points.isEmpty()) return
+/** Aspect-fit the authored pose into the frame (centered, padded) as view-space
+ *  joint offsets — used before a live body is tracked. */
+private fun DrawScope.centeredGhost(points: Map<Joint, Vec2>): Map<Joint, Offset> {
+    if (points.isEmpty()) return emptyMap()
     val minX = points.values.minOf { it.x }
     val maxX = points.values.maxOf { it.x }
     val minY = points.values.minOf { it.y }
     val maxY = points.values.maxOf { it.y }
-    if (maxX <= minX || maxY <= minY) return
-
-    val inset = 0.18f
+    if (maxX <= minX || maxY <= minY) return emptyMap()
+    val inset = 0.16f
     val fit = minOf(
         size.width * (1 - 2 * inset) / (maxX - minX),
         size.height * (1 - 2 * inset) / (maxY - minY),
     )
     val ox = (size.width - (maxX - minX) * fit) / 2
     val oy = (size.height - (maxY - minY) * fit) / 2
-    fun place(p: com.oerol.posekit.Vec2) = Offset((p.x - minX) * fit + ox, (p.y - minY) * fit + oy)
+    return points.mapValues { Offset((it.value.x - minX) * fit + ox, (it.value.y - minY) * fit + oy) }
+}
 
-    val color = Theme.Colors.accent.copy(alpha = 0.5f)
-    val base = minOf(size.width, size.height) * 0.02f
+/** Builds one unioned silhouette from filled limb capsules, a torso polygon,
+ *  and a head, then paints it as a ghost: translucent warm-white fill, a dark
+ *  halo for legibility over any background, and a thin gold edge. */
+private fun DrawScope.drawBodyGhost(p: Map<Joint, Offset>) {
+    if (p.size < 6) return
+    val minDim = min(size.width, size.height)
+    val limbW = minDim * 0.06f
+    val slimW = minDim * 0.045f
 
-    fun stroke(a: com.oerol.posekit.Joint, b: com.oerol.posekit.Joint, width: Float) {
-        val pa = points[a] ?: return
-        val pb = points[b] ?: return
-        drawLine(color, place(pa), place(pb), strokeWidth = width, cap = StrokeCap.Round)
+    val parts = mutableListOf<Path>()
+
+    val ls = p[Joint.leftShoulder]; val rs = p[Joint.rightShoulder]
+    val lh = p[Joint.leftHip]; val rh = p[Joint.rightHip]
+    if (ls != null && rs != null && lh != null && rh != null) {
+        parts += Path().apply {
+            moveTo(ls.x, ls.y); lineTo(rs.x, rs.y); lineTo(rh.x, rh.y); lineTo(lh.x, lh.y); close()
+        }
     }
 
-    for (bone in Bone.entries) {
-        if (bone == Bone.NECK) continue
-        val width = if (bone == Bone.TORSO) base * 1.5f else base
-        stroke(bone.endpoints.first, bone.endpoints.second, width)
+    fun limb(a: Joint, b: Joint, w: Float) {
+        val pa = p[a] ?: return
+        val pb = p[b] ?: return
+        parts += capsulePath(pa, pb, w / 2)
     }
-    stroke(com.oerol.posekit.Joint.leftHip, com.oerol.posekit.Joint.rightHip, base)
-    stroke(com.oerol.posekit.Joint.leftShoulder, com.oerol.posekit.Joint.rightShoulder, base)
+    limb(Joint.leftShoulder, Joint.leftElbow, limbW)
+    limb(Joint.leftElbow, Joint.leftWrist, slimW)
+    limb(Joint.rightShoulder, Joint.rightElbow, limbW)
+    limb(Joint.rightElbow, Joint.rightWrist, slimW)
+    limb(Joint.leftHip, Joint.leftKnee, limbW)
+    limb(Joint.leftKnee, Joint.leftAnkle, slimW)
+    limb(Joint.rightHip, Joint.rightKnee, limbW)
+    limb(Joint.rightKnee, Joint.rightAnkle, slimW)
 
-    val le = points[com.oerol.posekit.Joint.leftEar]
-    val re = points[com.oerol.posekit.Joint.rightEar]
+    // Head: sized from ear span, else a default disc above the neck/shoulders.
+    val le = p[Joint.leftEar]; val re = p[Joint.rightEar]
+    val neck = p[Joint.neck] ?: if (ls != null && rs != null) Offset((ls.x + rs.x) / 2, (ls.y + rs.y) / 2) else null
+    val headCenter: Offset?
+    val headRadius: Float
     if (le != null && re != null) {
-        val pa = place(le)
-        val pb = place(re)
-        val center = Offset((pa.x + pb.x) / 2, (pa.y + pb.y) / 2)
-        val dx = pa.x - pb.x
-        val dy = pa.y - pb.y
-        val radius = maxOf(kotlin.math.sqrt(dx * dx + dy * dy) * 0.8f, base)
-        drawCircle(color, radius = radius, center = center, style = Stroke(width = base))
+        headCenter = Offset((le.x + re.x) / 2, (le.y + re.y) / 2)
+        headRadius = maxOf(hypot(le.x - re.x, le.y - re.y) * 0.85f, minDim * 0.05f)
+    } else {
+        val nose = p[Joint.nose]
+        headCenter = nose ?: neck
+        headRadius = minDim * 0.06f
+    }
+    if (headCenter != null) {
+        parts += Path().apply {
+            addOval(Rect(headCenter.x - headRadius, headCenter.y - headRadius,
+                headCenter.x + headRadius, headCenter.y + headRadius))
+        }
+    }
+
+    if (parts.isEmpty()) return
+    val body = parts.reduce { acc, part -> Path().apply { op(acc, part, PathOperation.Union) } }
+
+    drawPath(body, Theme.Colors.foreground.copy(alpha = 0.22f))
+    drawPath(body, Color.Black.copy(alpha = 0.30f), style = Stroke(width = 5.dp.toPx()))
+    drawPath(body, Theme.Colors.accent.copy(alpha = 0.9f), style = Stroke(width = 2.dp.toPx()))
+}
+
+/** A filled capsule (rounded thick segment) between two points. */
+private fun capsulePath(a: Offset, b: Offset, r: Float): Path = Path().apply {
+    addOval(Rect(a.x - r, a.y - r, a.x + r, a.y + r))
+    addOval(Rect(b.x - r, b.y - r, b.x + r, b.y + r))
+    val dx = b.x - a.x; val dy = b.y - a.y
+    val len = hypot(dx, dy)
+    if (len >= 1e-3f) {
+        val px = -dy / len * r; val py = dx / len * r
+        moveTo(a.x + px, a.y + py)
+        lineTo(b.x + px, b.y + py)
+        lineTo(b.x - px, b.y - py)
+        lineTo(a.x - px, a.y - py)
+        close()
     }
 }
 

@@ -32,11 +32,13 @@ exact pose, proportions, and framing):
 > texture, no logos. PURE BLACK background (#000000). Photorealistic 3D render,
 > subject centered, portrait 2:3, 1024x1536.
 
-Ship checklist for the ghost set:
-- [ ] 10 JPEGs named by pose id in `App/Resources/Poses/Ghosts/`
+Ship checklist for the ghost set (6/10 done):
+- [x] classic-stand, close-up-portrait, seated-casual, crossed-arms,
+      lean-wall, candid-walk — bundled, verified glowing on the emulator
+- [ ] Remaining 4: mirror-selfie, power-pose, peace-selfie, hands-pockets
 - [ ] Pure black background, ivory figure, same pose as the matching photo
 - [ ] Consistent mannequin material/lighting across the set
-- [ ] Verify in-app: figure glows centered over the camera, black gone
+- [x] Verified in-app: figure glows centered over the camera, black gone
 
 ## Where files go
 

@@ -224,9 +224,9 @@ struct FeatureRevealStep: View {
     @EnvironmentObject private var viewModel: OnboardingViewModel
 
     private let features: [(String, String, String)] = [
-        ("figure.stand", "pose me", "pick a pose, match the ghost overlay, nail the shot"),
-        ("waveform.badge.mic", "guide me", "live coaching that fixes your posture in real time"),
-        ("square.grid.2x2", "pose library", "curated poses for mirror shots, selfies and more")
+        ("sparkles", "collections for every shot", "dating, professional, mirror, candid — curated for the moment"),
+        ("waveform.badge.mic", "live coaching", "real-time feedback fixes your posture as you move"),
+        ("figure.stand", "match the guide", "line up with the on-screen guide and nail it")
     ]
 
     var body: some View {
@@ -291,19 +291,20 @@ struct CustomPlanStep: View {
                     planRow("curated pose library", detail: "matched to your style")
                 }
 
-                PillButton(title: "unlock my plan") {
+                PillButton(title: "start posing free") {
                     UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                    // Presents the `onboarding_complete` paywall. Whether this
-                    // closure runs ONLY after subscribing is decided by the
-                    // campaign's gating on the Superwall dashboard, not here:
-                    // the placement must be set to Gated. If it is non-gated,
-                    // errors, or the SDK is unconfigured, the closure fires and
-                    // onboarding completes for free. See docs/RELEASE.md.
-                    Superwall.shared.register(placement: "onboarding_complete") {
-                        appState.completeOnboarding()
-                    }
+                    appState.completeOnboarding()
+                    appState.unlock(placement: "onboarding_complete") { }
                 }
                 .padding(.top, Theme.Spacing.s)
+
+                Button("see everything in Pose+") {
+                    appState.unlock(placement: "onboarding_complete") { }
+                }
+                .font(Theme.Typography.caption)
+                .foregroundStyle(Theme.Colors.accent)
+                .frame(maxWidth: .infinity)
+                .buttonStyle(.pressable)
 
                 legalFooter
 

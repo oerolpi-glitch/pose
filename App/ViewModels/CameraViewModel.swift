@@ -6,8 +6,6 @@ import PoseKit
 
 @MainActor
 final class CameraViewModel: NSObject, ObservableObject {
-    @Published var liveSegments: [(CGPoint, CGPoint)] = []
-    @Published var ghostSegments: [(CGPoint, CGPoint)] = []
     @Published var score: Float?
     @Published var hintText: String?
     @Published var bodyDetected = true
@@ -28,6 +26,10 @@ final class CameraViewModel: NSObject, ObservableObject {
     private let detectionQueue = DispatchQueue(label: "pose.detection", qos: .userInitiated)
     private var viewSize: CGSize = .zero
     private var holdStart: Date?
+    /// Auto-capture fires once per matched pose; it re-arms only after the
+    /// score drops back below the re-arm threshold (the pose is broken), so a
+    /// single held pose takes exactly one photo instead of a burst.
+    private var armed = true
     private var thermalObserver: NSObjectProtocol?
     private var previewDismissTask: Task<Void, Never>?
     /// True from the moment a capture is requested until its photo callback
@@ -36,8 +38,9 @@ final class CameraViewModel: NSObject, ObservableObject {
     /// shot fire for the same moment — this closes that window.
     private var captureInFlight = false
 
-    static let autoCaptureThreshold: Float = 0.85
-    static let autoCaptureHoldSeconds: TimeInterval = 1.0
+    static let autoCaptureThreshold: Float = 0.9
+    static let autoCaptureRearm: Float = 0.7
+    static let autoCaptureHoldSeconds: TimeInterval = 1.2
     static let previewDismissSeconds: TimeInterval = 3.0
 
     var session: AVCaptureSession { camera.session }
@@ -99,8 +102,6 @@ final class CameraViewModel: NSObject, ObservableObject {
     nonisolated private func processFrame(pose: PoseVector?, bufferSize: CGSize) {
         guard let pose else {
             Task { @MainActor in
-                self.liveSegments = []
-                self.ghostSegments = []
                 self.score = nil
                 self.bodyDetected = false
                 self.scoreSmoother.reset()
@@ -118,7 +119,8 @@ final class CameraViewModel: NSObject, ObservableObject {
             let mapper = CoordinateMapper(bufferSize: bufferSize,
                                           viewSize: self.viewSize,
                                           isMirrored: self.camera.isFront)
-            // PoseKit-space pose for scoring
+            // PoseKit-space pose for scoring (the ghost guide is a fixed,
+            // centered figure drawn by the view — no per-frame projection).
             var kitPoints: [Joint: SIMD2<Float>] = [:]
             for (j, p) in smoothed.points {
                 kitPoints[j] = mapper.poseKitPoint(fromVisionPoint: CGPoint(x: CGFloat(p.x),
@@ -126,21 +128,8 @@ final class CameraViewModel: NSObject, ObservableObject {
             }
             let kitPose = PoseVector(points: kitPoints)
 
-            // Skeleton segments in view space
-            var segments: [(CGPoint, CGPoint)] = []
-            for bone in Bone.allCases {
-                let (a, b) = bone.endpoints
-                guard let pa = smoothed.points[a], let pb = smoothed.points[b] else { continue }
-                segments.append((
-                    mapper.viewPoint(fromVisionPoint: CGPoint(x: CGFloat(pa.x), y: CGFloat(pa.y))),
-                    mapper.viewPoint(fromVisionPoint: CGPoint(x: CGFloat(pb.x), y: CGFloat(pb.y)))
-                ))
-            }
-            self.liveSegments = segments
-
             switch self.mode {
             case .poseMe:
-                self.updateGhost(live: kitPose, mapper: mapper)
                 if let target = self.targetPose,
                    let result = PoseScorer.score(reference: target.poseVector, live: kitPose) {
                     let display = self.scoreSmoother.smooth(result.overall)
@@ -160,32 +149,12 @@ final class CameraViewModel: NSObject, ObservableObject {
         }
     }
 
-    /// Projects the reference pose onto the detected body (optimal similarity
-    /// transform), so the gold ghost stands where the user stands, at their
-    /// size — matching it means adjusting limbs, not walking to the overlay.
-    private func updateGhost(live: PoseVector, mapper: CoordinateMapper) {
-        guard let target = targetPose,
-              let transform = SimilarityTransform.mapping(reference: target.poseVector,
-                                                          live: live) else {
-            ghostSegments = []
-            return
-        }
-        let reference = target.poseVector
-        var segments: [(CGPoint, CGPoint)] = []
-        for bone in Bone.allCases {
-            let (a, b) = bone.endpoints
-            guard let pa = reference.points[a], let pb = reference.points[b] else { continue }
-            segments.append((
-                mapper.viewPoint(fromPoseKitPoint: transform.apply(pa)),
-                mapper.viewPoint(fromPoseKitPoint: transform.apply(pb))
-            ))
-        }
-        ghostSegments = segments
-    }
-
     private func updateHold(score: Float?) {
         guard mode == .poseMe else { return }
-        guard capturedImage == nil, !captureInFlight else {
+        // Re-arm once the pose is broken, so one held pose = one photo.
+        if let s = score, s < Self.autoCaptureRearm { armed = true }
+
+        guard capturedImage == nil, !captureInFlight, armed else {
             holdStart = nil
             autoCaptureProgress = 0
             return
@@ -197,6 +166,7 @@ final class CameraViewModel: NSObject, ObservableObject {
             if held >= Self.autoCaptureHoldSeconds {
                 holdStart = nil
                 autoCaptureProgress = 0
+                armed = false // no re-fire until the pose breaks and re-arms
                 UINotificationFeedbackGenerator().notificationOccurred(.success)
                 capture()
             }

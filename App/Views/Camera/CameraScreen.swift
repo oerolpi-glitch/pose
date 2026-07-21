@@ -28,22 +28,12 @@ struct CameraScreen: View {
                     .ignoresSafeArea()
 
                 if let target = viewModel.targetPose, viewModel.mode == .poseMe {
-                    // Body tracked: the ghost is Procrustes-aligned onto the
-                    // user. Before tracking: a centered preview of the target.
-                    if viewModel.ghostSegments.isEmpty {
-                        MannequinView(pose: target.poseVector,
-                                      lineColor: Theme.Colors.accent.opacity(0.5),
-                                      fillHead: false)
-                            .allowsHitTesting(false)
-                            .padding(Theme.Spacing.xl)
-                    } else {
-                        GhostOverlay(segments: viewModel.ghostSegments)
-                            .ignoresSafeArea()
-                    }
+                    // A fixed, centered silhouette to align into — a translucent
+                    // filled body, not a wireframe. The score is pose-invariant,
+                    // so the user matches the shape from anywhere in frame.
+                    GhostFigure(pose: target.poseVector)
+                        .ignoresSafeArea()
                 }
-
-                SkeletonOverlay(segments: viewModel.liveSegments)
-                    .ignoresSafeArea()
 
                 if isSearchingForBody {
                     searchingForBodyView

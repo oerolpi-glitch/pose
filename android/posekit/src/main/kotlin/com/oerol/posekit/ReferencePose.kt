@@ -11,6 +11,8 @@ data class ReferencePose(
     val id: String,
     val title: String,
     val tags: List<String>,
+    val collections: List<String>,
+    val free: Boolean,
     val joints: Map<String, List<Float>>,
 ) {
     /** Typed pose. Unknown joint names and arrays without exactly 2 values are skipped. */
@@ -37,10 +39,16 @@ data class ReferencePose(
                 val arr = jointsObj.getJSONArray(key)
                 joints[key] = (0 until arr.length()).map { arr.getDouble(it).toFloat() }
             }
+            val collectionsArr = obj.optJSONArray("collections")
+            val collections = if (collectionsArr == null) emptyList()
+                else (0 until collectionsArr.length()).map { collectionsArr.getString(it) }
+            val free = obj.optBoolean("free", false)
             return ReferencePose(
                 id = obj.getString("id"),
                 title = obj.getString("title"),
                 tags = tags,
+                collections = collections,
+                free = free,
                 joints = joints,
             )
         }

@@ -17,14 +17,25 @@ paywall give paid features away for free.
 
 ## 2. Superwall dashboard (not in this repo — the paywall's behavior lives here)
 
-The app calls `Superwall.shared.register(placement: "onboarding_complete") { completeOnboarding() }`.
-Whether that closure runs **only after subscribing** is decided entirely by the
-campaign config, not the code.
+The app is **freemium**, not hard-gated. Two placements, with deliberately
+different gating — getting these backwards breaks the model:
 
-- [ ] **BLOCKER** Create a campaign with placement `onboarding_complete`.
-- [ ] **BLOCKER** Set the placement's feature gating to **Gated**. If it is
-      non-gated (or errors, or the SDK is unconfigured), the feature closure
-      fires and onboarding completes **for free** — the hard paywall isn't hard.
+| Placement | Where | Gating | If misconfigured |
+|---|---|---|---|
+| `pose_unlock` | Tapping a locked (non-free) pose | **Gated** | Non-gated ⇒ every pose is free; the app has no paywall |
+| `onboarding_complete` | End of onboarding, as an *offer* | **Non-gated** | Gated ⇒ users are blocked from entering the app — re-breaks the soft gate |
+
+**Free tier (do not gate these):** live coaching, plus the three starter poses
+`classic-stand`, `mirror-selfie`, `hands-pockets` (marked `"free":true` in their
+pose JSON). Everything else is Pose+.
+
+Onboarding calls `appState.completeOnboarding()` **before** presenting
+`onboarding_complete`, so entry never depends on the paywall. That is
+intentional: the free poses are the conversion demo, and a user who never gets
+into the app never converts.
+
+- [ ] **BLOCKER** Create a campaign with placement `pose_unlock`, gating set to **Gated**.
+- [ ] **BLOCKER** Create a campaign with placement `onboarding_complete`, gating set to **Non-gated**.
 - [ ] **BLOCKER** The paywall template must contain: a visible **Restore
       Purchases** button, a link to **Terms of Service (EULA)**, and a link to
       **Privacy Policy**. (App Store Review Guideline 3.1.2.)
@@ -33,8 +44,12 @@ campaign config, not the code.
 - [ ] No fake-urgency countdown timers on the paywall — real Review-rejection
       risk, and the plan forbids it.
 - [ ] Verify **airplane-mode / SDK-error behavior on device**: with no network,
-      tapping "unlock my plan" must NOT silently complete onboarding. If it does,
-      revisit gating — a fail-open gate hands out the app.
+      the app must still open, onboarding must still complete, and the three free
+      poses must still work. Locked poses failing open (opening for free) is the
+      accepted, deliberate degradation — never a crash or a lockout.
+
+**Android:** parked as of 2026-07-22 (iOS-first). It ships with no paywall and
+all poses open. No Superwall configuration is required for Android.
 
 ## 3. App Store Connect
 

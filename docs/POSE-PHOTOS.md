@@ -21,23 +21,90 @@ alpha (gamma 2), so the black falls away and the figure glows softly over the
 dimmed camera feed — no hard cut-out edge, no transparency needed in the file.
 Missing ghost → the app draws a filled silhouette fallback.
 
-Generate by **img2img from each existing `Photos/<id>.jpg`** (guarantees the
-exact pose, proportions, and framing):
+**img2img from the photo is now blocked on most generators** — uploading a real
+person and asking for the same pose trips likeness/person-replication policy
+("cannot replicate the person in the photo"), regardless of how the output is
+described. Use **text-to-image** instead: no source photo means no likeness to
+replicate. Describe the pose mechanically from the pose's own joint
+coordinates in `Poses/<id>.json` — those are the source of truth the scorer
+uses, and the ghost only has to agree with them, not with the photo.
 
-> Convert the person in this photo into a smooth, featureless 3D display
-> mannequin sculpture in the EXACT same pose, body proportions, and framing.
-> Matte ivory / warm off-white material, seamless glossy-matte surface like a
+The original img2img prompt is kept below for reference; the body/material
+wording still applies verbatim to text-to-image:
+
+> Convert the person in this photo into a smooth, featureless 3D **retail
+> display mannequin** in the EXACT same pose, body proportions, and framing.
+> The mannequin wears a simple fitted matte bodysuit in the SAME warm off-white
+> tone as the body, so the whole form reads as one continuous sculpture. Matte
+> ivory / warm off-white throughout, seamless glossy-matte surface like a
 > high-end artist figure. Soft studio lighting, gentle shadows, subtle rim glow
-> around the form. Smooth minimal facial features, no hair, no clothing, no
-> texture, no logos. PURE BLACK background (#000000). Photorealistic 3D render,
-> subject centered, portrait 2:3, 1024x1536.
+> around the form. Smooth minimal facial features, no hair, no texture, no
+> logos, no patterns. PURE BLACK background (#000000). Photorealistic 3D
+> product render of a shop-window mannequin, subject centered, portrait 2:3,
+> 1024x1536.
 
-Ship checklist for the ghost set (6/10 done):
+**Do not ask for a nude figure.** The earlier version of this prompt said "no
+clothing", which got `mirror-selfie` and `power-pose` refused by the image
+generator — an unclothed body in a self-photography pose trips safety
+classifiers. It costs nothing to avoid: the app keys brightness to alpha, so a
+garment in the same ivory tone is visually near-identical to bare skin at ghost
+opacity, and "retail display mannequin / product render" framing generates
+reliably.
+
+### Framing: describe the frame, not just the subject
+
+Any pose whose JSON contains `leftAnkle`/`rightAnkle` MUST render head-to-toe,
+or the guide hides limbs the scorer grades. "Full body" is an adjective the
+model quietly drops — it needs a constraint it has to satisfy. Include verbatim:
+
+> **FULL-LENGTH SHOT — the ENTIRE figure is inside the frame, from the very top
+> of the head down to the soles of BOTH BARE FEET, which rest flat on the
+> floor. There is clear empty black space above the head and below the feet.
+> The legs and feet must NOT be cropped or cut off by the edge of the frame.**
+> Camera placed far back at waist height, wide full-body framing.
+
+Two things that reliably force the frame open: give the feet a *described
+position* (`power-pose`'s "planted wide apart, shoulder-width or more" worked
+first try; `mirror-selfie`'s "feet together" got cropped at mid-thigh), and
+name a full-height scene element — "standing in front of a **full-length
+mirror**" pulls the framing out better than any adjective.
+
+Close-up poses are the exception: match the crop to the tags, and trim the
+JSON's knees/ankles so the scorer only grades what the guide shows (see
+`close-up-portrait` and `peace-selfie`).
+
+If a pose is still refused, describe it **mechanically** and drop loaded words
+like "selfie":
+- `mirror-selfie` → "one arm raised holding a rectangular handheld device at
+  chest height, body angled three-quarters toward the viewer"
+- `power-pose` → "standing tall, both hands resting on hips, elbows out, feet
+  shoulder-width apart"
+
+Ship checklist for the ghost set — **10/10 done**:
 - [x] classic-stand, close-up-portrait, seated-casual, crossed-arms,
       lean-wall, candid-walk — bundled, verified glowing on the emulator
-- [ ] Remaining 4: mirror-selfie, power-pose, peace-selfie, hands-pockets
-- [ ] Pure black background, ivory figure, same pose as the matching photo
-- [ ] Consistent mannequin material/lighting across the set
+- [x] hands-pockets, peace-selfie — bundled (second generator, same look)
+- [x] power-pose, mirror-selfie — bundled (text-to-image from joint data)
+- [x] All three free-tier poses have finished art (the drawn-silhouette
+      fallback no longer appears for any bundled pose)
+- [x] Pure black background verified on every file (corner luminance ≤ 0.012,
+      so keyed alpha ≈ 0)
+- [ ] Consistent mannequin material/lighting across the set — three generators
+      were used; compare on device during QA
+
+**Check the black point on every new render.** The keying is `alpha = luminance²`,
+so a background that is *nearly* black still hazes the camera feed. Most renders
+land at luminance ≤ 0.012 (alpha ≈ 0.0001) and need nothing. The full-body
+`mirror-selfie` render came back at 0.089 in the lower corners — ~80× higher —
+and was corrected with a linear black-point lift before bundling:
+
+```python
+FLOOR = 26  # everything at/below 26/255 becomes true black
+lut = [min(255, int(round(max(0, i - FLOOR) * 255.0 / (255 - FLOOR)))) for i in range(256)]
+im = im.point(lut * 3)
+```
+
+The bright figure is essentially untouched; only the near-black background moves.
 - [x] Verified in-app: figure glows centered over the camera, black gone
 
 ## Where files go

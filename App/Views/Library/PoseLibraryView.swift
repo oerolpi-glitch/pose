@@ -5,6 +5,7 @@ import UIKit
 struct PoseLibraryView: View {
     @StateObject private var viewModel = PoseLibraryViewModel()
     @StateObject private var favorites = FavoritesStore()
+    @EnvironmentObject private var appState: AppState
     var onSelect: ((ReferencePose) -> Void)?
 
     private let columns = [GridItem(.flexible(), spacing: Theme.Spacing.m), GridItem(.flexible(), spacing: Theme.Spacing.m)]
@@ -12,13 +13,13 @@ struct PoseLibraryView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                Text("choose a pose")
+                Text("all poses")
                     .font(Theme.Typography.stepTitle)
                     .themedDisplay()
                     .foregroundStyle(Theme.Colors.foreground)
                     .padding(.top, Theme.Spacing.xl)
 
-                SearchField(placeholder: "describe your shot", text: $viewModel.query)
+                SearchField(placeholder: "search poses", text: $viewModel.query)
                     .padding(.top, Theme.Spacing.m)
 
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -40,9 +41,10 @@ struct PoseLibraryView: View {
                         LazyVGrid(columns: columns, spacing: Theme.Spacing.m) {
                             ForEach(viewModel.results) { pose in
                                 PoseCard(pose: pose,
+                                         isLocked: PremiumGate.isLocked(pose, subscribed: appState.isSubscribed),
                                          isFavorite: favorites.isFavorite(pose.id),
                                          onFavorite: { favorites.toggle(pose.id) },
-                                         onSelect: { onSelect?(pose) })
+                                         onSelect: { select(pose) })
                             }
                         }
                     }
@@ -56,6 +58,14 @@ struct PoseLibraryView: View {
         .background(Theme.Colors.background)
         .navigationTitle("")
         .toolbarBackground(Theme.Colors.background, for: .navigationBar)
+    }
+
+    private func select(_ pose: ReferencePose) {
+        if PremiumGate.isLocked(pose, subscribed: appState.isSubscribed) {
+            appState.unlock(placement: "pose_unlock") { onSelect?(pose) }
+        } else {
+            onSelect?(pose)
+        }
     }
 
     private var emptyState: some View {
@@ -77,6 +87,7 @@ struct PoseLibraryView: View {
 
 struct PoseCard: View {
     let pose: ReferencePose
+    let isLocked: Bool
     let isFavorite: Bool
     let onFavorite: () -> Void
     let onSelect: () -> Void
@@ -95,6 +106,16 @@ struct PoseCard: View {
             .background(RoundedRectangle(cornerRadius: Theme.Radius.card).fill(Theme.Colors.surface))
             .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
             .themedCardShadow()
+            .overlay(alignment: .topLeading) {
+                if isLocked {
+                    Image(systemName: "lock.fill")
+                        .font(Theme.Icon.inline())
+                        .foregroundStyle(Theme.Colors.accent)
+                        .padding(Theme.Spacing.s)
+                        .themedHUD(Circle())
+                        .padding(Theme.Spacing.xs)
+                }
+            }
         }
         .buttonStyle(.pressable)
     }

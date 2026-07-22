@@ -42,6 +42,9 @@ class PoseRepository(private val context: Context) {
                 (tag == null || tag in pose.tags)
         }
 
+    fun poses(collection: IntentCollection): List<ReferencePose> =
+        poses.filter { collection.id in it.collections }
+
     /** Model photograph for a pose, or null when none is bundled. */
     fun photo(id: String): Bitmap? = photoCache.getOrPut(id) {
         runCatching {

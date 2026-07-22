@@ -92,14 +92,19 @@ Ship checklist for the ghost set — **10/10 done**:
 - [ ] Consistent mannequin material/lighting across the set — three generators
       were used; compare on device during QA
 
-**Known issue — `mirror-selfie` ghost is cropped at mid-thigh** while the pose
-is tagged `full-body`, sits in the `fullbody` collection, and has joints down
-to the ankles (y=0.86). Shipped anyway because this pose's legs are neutral and
-vertical (knees 0.55/0.45, ankles 0.55/0.45), so they carry almost no
-discriminative signal and any upright stance scores them fine — unlike
-`peace-selfie`, whose JSON was trimmed to the hips to match its close-up
-framing. Regenerate full-body (feet visible) when convenient; do NOT trim this
-pose's joints, since head-to-toe framing is the entire point of a mirror selfie.
+**Check the black point on every new render.** The keying is `alpha = luminance²`,
+so a background that is *nearly* black still hazes the camera feed. Most renders
+land at luminance ≤ 0.012 (alpha ≈ 0.0001) and need nothing. The full-body
+`mirror-selfie` render came back at 0.089 in the lower corners — ~80× higher —
+and was corrected with a linear black-point lift before bundling:
+
+```python
+FLOOR = 26  # everything at/below 26/255 becomes true black
+lut = [min(255, int(round(max(0, i - FLOOR) * 255.0 / (255 - FLOOR)))) for i in range(256)]
+im = im.point(lut * 3)
+```
+
+The bright figure is essentially untouched; only the near-black background moves.
 - [x] Verified in-app: figure glows centered over the camera, black gone
 
 ## Where files go

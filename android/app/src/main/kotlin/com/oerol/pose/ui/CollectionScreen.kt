@@ -16,7 +16,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import com.oerol.pose.data.IntentCollection
 import com.oerol.pose.data.PoseRepository
-import com.oerol.pose.data.PremiumGate
 import com.oerol.pose.theme.Theme
 import com.oerol.posekit.ReferencePose
 
@@ -29,8 +28,6 @@ fun CollectionScreen(
     val repo = remember { PoseRepository(context) }
     val collection = IntentCollection.entries.first { it.id == collectionId }
     val poses = remember(collectionId) { repo.poses(collection) }
-    // TODO(Task 9): route locked taps through the real Superwall paywall.
-    val onLockedSelect: (ReferencePose) -> Unit = { onSelect(it) }
 
     Column(
         Modifier
@@ -58,13 +55,15 @@ fun CollectionScreen(
             contentPadding = PaddingValues(top = Theme.Spacing.l, bottom = Theme.Spacing.xl),
             modifier = Modifier.fillMaxSize(),
         ) {
+            // Android has no paywall yet (monetization is iOS-first), so every
+            // pose is open. Showing lock badges without a purchase path would
+            // be badges that lie — PremiumGate returns here with the paywall.
             items(poses, key = { it.id }) { pose ->
-                val locked = PremiumGate.isLocked(pose, subscribed = false)
                 PoseCard(
                     pose = pose,
                     photo = repo.photo(pose.id),
-                    locked = locked,
-                    onClick = { if (locked) onLockedSelect(pose) else onSelect(pose) },
+                    locked = false,
+                    onClick = { onSelect(pose) },
                 )
             }
         }

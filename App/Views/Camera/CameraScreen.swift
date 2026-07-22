@@ -96,15 +96,20 @@ struct CameraScreen: View {
 
             Spacer()
 
-            if let score = viewModel.score {
-                Text("\(Int(score * 100))%")
-                    .font(Theme.Typography.readout)
-                    .monospacedDigit()
-                    .foregroundStyle(Theme.Colors.foreground)
-                    .contentTransition(.numericText())
+            if let readiness = viewModel.readiness {
+                // Word, not a number: the old percentage read confidently high
+                // even with a limb totally wrong. Never colour-only — the label
+                // itself carries the state so it still reads for colour-blind
+                // users; only `.hold` gets the gold tint.
+                Text(readiness.label)
+                    .font(Theme.Typography.bodyEmphasis)
+                    .foregroundStyle(readiness == .hold ? Theme.Colors.onAccent : Theme.Colors.foreground)
                     .padding(.horizontal, Theme.Spacing.m)
                     .padding(.vertical, Theme.Spacing.s)
-                    .themedHUD(Capsule())
+                    .background(readiness == .hold
+                                ? AnyShapeStyle(Theme.Colors.accent)
+                                : AnyShapeStyle(.ultraThinMaterial), in: Capsule())
+                    .overlay(Capsule().strokeBorder(Theme.Colors.hairline, lineWidth: 1))
                     .transition(.opacity.combined(with: .scale(scale: 0.9)))
             }
 
@@ -140,7 +145,7 @@ struct CameraScreen: View {
                 .buttonStyle(.pressable)
             }
         }
-        .animation(Theme.Motion.spring, value: viewModel.score)
+        .animation(Theme.Motion.spring, value: viewModel.readiness)
     }
 
     /// Shown while no body is tracked. Deliberately calm and centered — it is a

@@ -51,6 +51,28 @@ garment in the same ivory tone is visually near-identical to bare skin at ghost
 opacity, and "retail display mannequin / product render" framing generates
 reliably.
 
+### Framing: describe the frame, not just the subject
+
+Any pose whose JSON contains `leftAnkle`/`rightAnkle` MUST render head-to-toe,
+or the guide hides limbs the scorer grades. "Full body" is an adjective the
+model quietly drops — it needs a constraint it has to satisfy. Include verbatim:
+
+> **FULL-LENGTH SHOT — the ENTIRE figure is inside the frame, from the very top
+> of the head down to the soles of BOTH BARE FEET, which rest flat on the
+> floor. There is clear empty black space above the head and below the feet.
+> The legs and feet must NOT be cropped or cut off by the edge of the frame.**
+> Camera placed far back at waist height, wide full-body framing.
+
+Two things that reliably force the frame open: give the feet a *described
+position* (`power-pose`'s "planted wide apart, shoulder-width or more" worked
+first try; `mirror-selfie`'s "feet together" got cropped at mid-thigh), and
+name a full-height scene element — "standing in front of a **full-length
+mirror**" pulls the framing out better than any adjective.
+
+Close-up poses are the exception: match the crop to the tags, and trim the
+JSON's knees/ankles so the scorer only grades what the guide shows (see
+`close-up-portrait` and `peace-selfie`).
+
 If a pose is still refused, describe it **mechanically** and drop loaded words
 like "selfie":
 - `mirror-selfie` → "one arm raised holding a rectangular handheld device at

@@ -978,39 +978,54 @@ git commit -m "docs: freemium placements + intent-collection store copy"
 
 ---
 
-## Phase 2 — Couples Posing + Personal Technique Profile
+## Phase 2 — Light Coaching + Couples Posing + Personal Technique Profile
 
-Differentiators #3 (multi-person) and the "better than Photogenik's face scan" personalization. Depends on Phase 1's collection + gating scaffolding. **Not broken into bite-sized steps here** — it needs new pose assets and a design pass first; these are the scoped work items with acceptance criteria.
+The differentiators that break the 2D-clone mold: real-time **light coaching** (the headline — a capability Photogenik's 2D pipeline structurally lacks), multi-person posing, and a sensor-grounded personal-technique profile. Depends on Phase 1's collection + gating scaffolding. Scoped work items with acceptance criteria; not bite-sized steps yet.
 
-### 2A. Couples / multi-person posing
-- **Scope:** author couple reference poses (two skeletons per pose — extend the JSON schema with an optional `second` joint set, or ship paired pose ids). Detect and score two bodies: iOS Vision returns multiple `VNHumanBodyPoseObservation`s; ML Kit needs the multi-pose path. Score each person against their target; the ghost shows two figures.
-- **Files (anticipated):** schema in `ReferencePose` (both), `PoseDetectionService`/`PoseAnalyzer` multi-body handling, `CameraViewModel`/`CameraScreen` two-score HUD, `couple` collection populated, new `Ghosts/*` art for pairs.
-- **Acceptance:** the `couple` collection loses "coming soon" and lists ≥3 couple poses; camera tracks and scores two people; ghost renders both; works on both platforms.
+**Explicitly out of scope — LiDAR / depth-mesh environment scanning.** Decision (2026-07-22): LiDAR is Pro-iPhone-only, rear-camera-only (useless for selfies, the dominant flow), and has no Android equivalent — it would fragment the user base for a narrow payoff. The light-coaching win below needs **no LiDAR**: it uses ARKit light estimation (all ARKit iPhones) + ARCore Environmental HDR (Android), so it ships cross-platform.
+
+### 2A. Light coaching (headline — cross-platform, no LiDAR)
+- **Scope:** real-time lighting feedback — ambient intensity (lux), color temperature (warm/cool), and primary light **direction**. Coach to best light: "you're backlit — turn to face the window", "harsh overhead — tilt chin down", "warm light on your left — angle into it". A calm HUD chip (warm/cool/harsh + a direction cue), not a number.
+- **APIs:** iOS — ARKit `ARDirectionalLightEstimate` (intensity, temperature, primaryLightDirection, spherical harmonics). Android — ARCore `LightEstimationMode.ENVIRONMENTAL_HDR` (main light direction, intensity, color correction). No LiDAR.
+- **Architecture note:** a full ARSession alongside the Vision/ML Kit pose pipeline is heavy. Prefer a low-frequency light-only sampling path (do NOT run ARKit body tracking here — the pose loop stays the skeleton source). If co-running is unacceptable on-device, fall back to a brief pre-shot "check your light" step instead of continuous sampling. Decide during design pass.
+- **Ethics/positioning:** rates the *light*, never appearance — the clean line vs. Photogenik's face/beauty scan. This is the sensor core 2C builds on.
+- **Acceptance:** camera shows a live light readout + ≥1 actionable directional cue; iOS + Android; pose loop keeps running (or a designed pre-shot light check exists); copy never rates appearance.
+- **Risk:** ARSession + pose co-run battery/thermal on mid-tier devices — gate frequency, measure on device before shipping continuous mode.
+
+### 2B. Couples / multi-person posing
+- **Scope:** author couple reference poses (two skeletons — extend the JSON schema with an optional `second` joint set, or ship paired ids). Detect and score two bodies: iOS Vision returns multiple `VNHumanBodyPoseObservation`s; ML Kit needs the multi-pose path. Score each person; ghost shows two figures.
+- **Files (anticipated):** schema in `ReferencePose` (both), `PoseDetectionService`/`PoseAnalyzer` multi-body, `CameraViewModel`/`CameraScreen` two-score HUD, `couple` collection populated, paired `Ghosts/*`.
+- **Acceptance:** `couple` collection loses "coming soon" and lists ≥3 poses; camera tracks + scores two people; ghost renders both; both platforms.
 - **Risk:** two-body detection cost on mid-tier Android — gate frame rate; couples poses are Pose+ (already gated by `free:false`).
 
-### 2B. Personal technique profile (the anti-"your angles")
-- **Scope:** an on-device, technique-framed profile — NOT an attractiveness/face score. Aggregate the user's live coaching signals (which limbs they consistently miss, best-scoring angle, posture tendencies) into a private local profile that personalizes hints and collection ordering. Framed as "your posing tendencies", never a rating of the person.
-- **Files (anticipated):** a `TechniqueProfile` store (on-device only, both platforms), hooks in `CameraViewModel`/`CameraViewModel.kt` to record per-session limb-miss stats, profile surface in Home.
-- **Acceptance:** after a few sessions, Home shows a private "your tendencies" card with actionable technique notes; nothing leaves the device; copy never rates appearance.
-- **Guardrail:** privacy-first (no upload), and explicitly not a beauty score — this is the ethical + differentiating line vs. Photogenik's face scan.
+### 2C. Personal technique profile (the anti-"your angles"), fed by light data
+- **Scope:** an on-device, technique-framed profile — NOT an attractiveness/face score. Aggregate live coaching signals (which limbs the user consistently misses, best-scoring angle) **plus the 2A light data** (which lighting they shoot best in) into a private local profile that personalizes hints and collection ordering. Framed as "your posing tendencies", never a rating of the person.
+- **Files (anticipated):** a `TechniqueProfile` store (on-device, both platforms), hooks in `CameraViewModel`/`CameraViewModel.kt` to record per-session limb-miss + light stats, a profile card in Home.
+- **Acceptance:** after a few sessions, Home shows a private "your tendencies" card with actionable technique + light notes; nothing leaves the device; copy never rates appearance.
+- **Guardrail:** privacy-first (no upload), explicitly not a beauty score — the ethical + differentiating line vs. Photogenik's face scan.
 
 ---
 
-## Phase 3 — Capture-Time Craft + Retention
+## Phase 3 — 3D Pose Scoring + Capture-Time Craft + Retention
 
-Editing-app patterns that raise perceived quality and retention. Held items from prior scope live here. Scoped, not step-level.
+Depth-aware scoring (the deepest moat) plus editing-app retention patterns and held parity polish. Scoped, not step-level.
 
-### 3A. Composition grid + capture-time framing
-- Rule-of-thirds / horizon overlay in the camera; optional. Files: `CameraScreen` (both). Acceptance: toggleable grid, off by default, themed.
+### 3A. 3D pose scoring (the real moat — rear-camera / tripod mode only)
+- **Scope:** today's scoring is 2D Procrustes — it can't tell a 30° turn from 45°, or an arm forward vs. back. ARBodyTracking (iOS, A12+) / ARCore augmented-body (Android) gives a 3D world-space skeleton → true angle coaching ("rotate torso 15° toward camera"). 2D competitors structurally cannot do this. **No LiDAR needed** (motion capture is camera + Neural Engine).
+- **Constraint:** rear-camera only, heavy — scope to the "someone's shooting me" / tripod flow, NOT selfies. Progressive enhancement; falls back to 2D scoring on unsupported devices or the selfie camera.
+- **Acceptance:** in tripod/rear mode on a supported device, coaching includes a depth/rotation cue the 2D path can't produce; selfie flow unchanged.
 
-### 3B. Favorites → "recipes"
-- Promote `FavoritesStore` into saved shot setups (pose + collection + coaching notes) the user can reopen. Files: `FavoritesStore` (both), a "saved" surface. Acceptance: a saved shot reopens straight into `poseMe` with that pose.
+### 3B. Composition grid + capture-time framing
+- Rule-of-thirds / horizon overlay in the camera; toggleable, off by default, themed. Files: `CameraScreen` (both).
 
-### 3C. Streaks / progress
-- Lightweight daily-shot streak to drive return visits, on-device. Files: a `Streak` store (both), a Home badge. Acceptance: shooting on consecutive days increments a visible streak; purely local.
+### 3C. Favorites → "recipes"
+- Promote `FavoritesStore` into saved shot setups (pose + collection + coaching notes) the user can reopen. Files: `FavoritesStore` (both), a "saved" surface. Acceptance: a saved shot reopens straight into `poseMe`.
 
-### 3D. Held parity polish (only after de-clone has shipped and settled)
-- Movable/resizable ghost + closer-to-full-screen selfie framing. Deferred deliberately to avoid deepening the Photogenik resemblance before the de-clone is established. Revisit once Phase 1 differentiation is live and the copycat risk is retired.
+### 3D. Streaks / progress
+- Lightweight on-device daily-shot streak to drive return visits. Files: a `Streak` store (both), a Home badge. Acceptance: consecutive days increment a visible streak; purely local.
+
+### 3E. Held parity polish (only after de-clone has shipped and settled)
+- Movable/resizable ghost + closer-to-full-screen selfie framing. Deferred to avoid deepening the Photogenik resemblance before the de-clone is established. Revisit once Phase 1 differentiation is live.
 
 ---
 

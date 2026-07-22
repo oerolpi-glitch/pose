@@ -14,39 +14,43 @@ close with privacy (on-device) — the one claim competitors can't match.
 
 ## Promotional text (170 chars, editable without review)
 
-> Your personal posing coach, live in the camera. Real-time guidance,
-> a curated pose library, and auto-capture the moment you nail it.
+> Your personal posing coach, live in the camera. Start free — real-time
+> guidance and pose collections built around the shot you're actually taking.
 
 ## Description
 
 > **Never freeze in front of a camera again.**
 >
-> Pose is a real-time posing coach that lives inside your camera. Pick a pose,
-> and the live overlay guides your body into it — your match score climbs as
-> you adjust, and the shutter fires itself the moment you nail it.
+> Pose is a real-time posing coach that lives inside your camera. Tell it what
+> you're shooting, pick a pose, and a live guide walks your body into it.
 >
-> **POSE ME** — Choose from a curated library of editorial poses, each
-> photographed with a professional model. A live overlay and a real-time match
-> score coach you into the exact stance.
+> **START WITH THE SHOT, NOT THE POSE** — Dating and profile pictures.
+> Professional headshots. Mirror selfies. Full-body. Candid. Pose organises
+> every pose around what you're actually trying to capture, so you're not
+> scrolling a grid wondering what fits.
 >
-> **GUIDE ME** — No target pose, just better photos: live coaching that levels
-> your shoulders, straightens your head, and fixes your framing before you
-> shoot.
+> **LIVE COACHING** — Real-time feedback that levels your shoulders,
+> straightens your head, and fixes your framing before you shoot. Free, with
+> no pose required.
 >
-> **AUTO-CAPTURE** — Hold the pose and Pose takes the shot hands-free when
-> your match score peaks. What you framed is exactly what you get.
+> **MATCH THE GUIDE** — Each pose shows an on-screen guide to line up with,
+> and tells you which part to adjust as you move.
+>
+> **HANDS-FREE WHEN YOU WANT IT** — Turn on auto-capture and Pose takes the
+> shot once you're holding the pose. Off by default; the shutter is yours.
 >
 > **A LIBRARY THAT LOOKS LIKE A MAGAZINE** — Every pose is photographed in a
-> consistent editorial set, searchable by shot type: mirror, close-up, selfie,
-> full-body, candid.
+> consistent editorial set.
 >
 > **PRIVATE BY DESIGN** — All pose detection runs entirely on your iPhone
 > using Apple's Vision framework. Your camera feed never leaves your device.
 > No account, no uploads, no ads.
 >
-> Pose requires a subscription. Payment is charged to your Apple account;
-> subscriptions renew automatically unless cancelled at least 24 hours before
-> the period ends. Terms: https://oerolpi-glitch.github.io/pose/legal/terms.html
+> **Free to start.** Live coaching and a set of starter poses are free, no
+> subscription. Pose+ unlocks the full library and every collection. Payment is
+> charged to your Apple account; subscriptions renew automatically unless
+> cancelled at least 24 hours before the period ends.
+> Terms: https://oerolpi-glitch.github.io/pose/legal/terms.html
 > Privacy: https://oerolpi-glitch.github.io/pose/legal/privacy.html
 
 ## Keywords (100 chars, comma-separated, no spaces)

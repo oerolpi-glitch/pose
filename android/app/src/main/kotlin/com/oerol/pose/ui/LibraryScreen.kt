@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -19,6 +20,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -54,7 +58,7 @@ fun LibraryScreen(onSelect: (ReferencePose) -> Unit) {
             .padding(horizontal = Theme.Spacing.l)
     ) {
         Text(
-            "choose a pose",
+            "all poses",
             style = Theme.Typography.stepTitle,
             color = Theme.Colors.foreground,
             modifier = Modifier.padding(top = Theme.Spacing.xl),
@@ -63,7 +67,7 @@ fun LibraryScreen(onSelect: (ReferencePose) -> Unit) {
         SearchField(
             value = query,
             onValueChange = { query = it },
-            placeholder = "describe your shot",
+            placeholder = "search poses",
             modifier = Modifier.padding(top = Theme.Spacing.m),
         )
 
@@ -99,10 +103,11 @@ fun LibraryScreen(onSelect: (ReferencePose) -> Unit) {
 }
 
 @Composable
-private fun PoseCard(
+fun PoseCard(
     pose: ReferencePose,
     photo: android.graphics.Bitmap?,
     onClick: () -> Unit,
+    locked: Boolean = false,
 ) {
     Box(
         Modifier
@@ -140,6 +145,23 @@ private fun PoseCard(
                 style = Theme.Typography.sectionTitle,
                 color = Theme.Colors.foreground,
             )
+        }
+        if (locked) {
+            Box(
+                Modifier
+                    .align(Alignment.TopStart)
+                    .padding(Theme.Spacing.xs)
+                    .clip(CircleShape)
+                    .background(Theme.Colors.background.copy(alpha = 0.6f))
+                    .padding(Theme.Spacing.s),
+            ) {
+                Icon(
+                    Icons.Outlined.Lock,
+                    contentDescription = null,
+                    tint = Theme.Colors.accent,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
         }
     }
 }

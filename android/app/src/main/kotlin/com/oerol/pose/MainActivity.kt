@@ -14,6 +14,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.oerol.pose.data.PoseRepository
 import com.oerol.pose.ui.CameraScreen
+import com.oerol.pose.ui.CollectionScreen
 import com.oerol.pose.ui.HomeScreen
 import com.oerol.pose.ui.LibraryScreen
 
@@ -39,9 +40,17 @@ private fun PoseNav() {
     NavHost(navController = nav, startDestination = "home") {
         composable("home") {
             HomeScreen(
+                onOpenCollection = { c -> nav.navigate("collection/${c.id}") },
                 onOpenLibrary = { nav.navigate("library") },
                 onOpenCamera = { nav.navigate("camera") },
                 onOpenPose = { pose -> nav.navigate("camera?pose=${pose.id}") },
+            )
+        }
+        composable("collection/{id}") { entry ->
+            val id = entry.arguments?.getString("id").orEmpty()
+            CollectionScreen(
+                collectionId = id,
+                onSelect = { pose -> nav.navigate("camera?pose=${pose.id}") },
             )
         }
         composable("library") {

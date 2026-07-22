@@ -978,6 +978,37 @@ git commit -m "docs: freemium placements + intent-collection store copy"
 
 ---
 
+## Phase 1.5 — Coaching Credibility + Aligned Ghost
+
+The core coaching signal is currently untrustworthy, and that undermines every feature built on top of it. `PoseScorer` weights 0.7 Procrustes / 0.3 limb, so any upright body scores ~0.9 against a standing reference even with the arms completely wrong. The camera prints a confident `92%` while the pose is wrong; auto-capture had to ship **off by default** because of it. A confidently wrong number costs more perceived quality than a missing feature — once users learn the app doesn't know what it's talking about, they discount the light coaching in Phase 2 too.
+
+**Decision (2026-07-22) — per-limb feedback goes on the GHOST, not the user's body.** Marks on a live body read as "*you* are wrong" at the moment the user is most self-conscious, and violate the project's ethical line (rate the pose and the light, never the person). Marks on the mannequin read as "the pose isn't matched yet." Practically, markers on a live body also swim with detection noise, crowd when the subject is far, and can land on the face.
+
+**Blocker this creates, and its resolution:** the ghost JPGs are AI-generated art with no joint registration — the app cannot know where "the ghost's left elbow" is in the image. Resolved by Stage 2 below, which snaps the ghost onto the detected body using `SimilarityTransform` (already in PoseKit, tested, currently **unused** — its doc comment states it was built precisely so "the reference pose can be drawn ON the detected body"). Once aligned, the ghost-vs-body distinction dissolves: a limb marker sits on the ghost's limb *and* over the user's limb at once.
+
+### Stage 0 — Replace the lying number (do first; prerequisite for everything above it)
+- **Scope:** delete the `%` readout. Replace with a 3-state chip: `adjust` / `almost` / `hold`. Word + muted tint, **never colour-only** (red/green is the most common colour-blindness axis, ~8% of men; and traffic-light hues fight Noir Editorial — champagne gold is already the attention colour). Surface the directed hint that already works today (`PoseScore.hint` / `worstBone.coachingName` yields "left arm").
+- **Threshold unification (mandatory):** one shared constant drives the chip, the markers, and auto-capture. If the chip reads `hold` but the shutter won't fire, the credibility bug is simply rebuilt somewhere new. `CameraViewModel.autoCaptureWorstLimb` (0.8) is the existing value.
+- **Hysteresis:** state must persist several frames before flipping, or it strobes. `PoseSmoother` smooths joint positions, not derived state.
+- **Files:** `PoseScorer`/`PoseScore` (both platforms), `CameraScreen` + `CameraViewModel` (both).
+- **Acceptance:** no numeric score anywhere in the camera; chip state and auto-capture never disagree; state does not visibly flicker while holding still; both platforms.
+
+### Stage 1 — Per-limb truth (no art work, no registration)
+- **Scope:** `PoseScore` keeps only `worstBone` and discards the other nine bone scores — expose the full `LimbSimilarity.boneScores` map. Collapse 10 bones into the 6 regions `Bone.coachingName` already defines (left arm, right arm, left leg, right leg, torso, head). Render region state in a compact HUD body-map (small stylised figure, 6 zones) — legible at any subject size, needs no image registration, does not touch the beauty layer.
+- **Show only what's wrong.** Silence means correct. Marking every region reads as a debug overlay; marking the one arm that's off reads as intelligence.
+- **Acceptance:** the user can identify which body region is wrong without reading text; correct regions are unmarked; both platforms.
+
+### Stage 2 — Ghost anchors + aligned ghost (the differentiator)
+- **Scope:** add `ghostAnchors` to each pose JSON — normalised image coordinates for left/right shoulder and hip (4 points × 10 poses, eyeballed once, same manual pipeline as the photos). Compose that image↔pose registration with `SimilarityTransform.mapping(reference:live:)` to draw the mannequin snapped onto the user's body at their position, scale and rotation. Per-limb markers then land exactly, replacing Stage 1's body-map.
+- **Guards (mandatory):** clamp scale and translation to sane bounds, keep `minimumJoints: 8`, smooth the transform over time, and **fall back to today's centred ghost** whenever the transform is unavailable or out of range. Degrades to current behaviour rather than a ghost flying off-screen.
+- **Bonus:** this retires the "ghost is small and locked in the middle" complaint and beats Photogenik's manual drag-to-resize with automatic alignment — an improvement, not a copy. Supersedes the held parity item in 3E.
+- **Acceptance:** ghost tracks the user's body position/scale; markers land on the correct limbs; fallback to centred ghost is exercised and looks intentional; both platforms.
+
+### Stage 3 — Device polish (needs real hardware)
+- Aligned ghost occludes the user — opacity, edge-emphasis and smoothing constants need eyes on a real device. Cannot be settled from the Windows dev environment. Bundle into the on-device QA pass.
+
+---
+
 ## Phase 2 — Light Coaching + Couples Posing + Personal Technique Profile
 
 The differentiators that break the 2D-clone mold: real-time **light coaching** (the headline — a capability Photogenik's 2D pipeline structurally lacks), multi-person posing, and a sensor-grounded personal-technique profile. Depends on Phase 1's collection + gating scaffolding. Scoped work items with acceptance criteria; not bite-sized steps yet.
@@ -1026,6 +1057,83 @@ Depth-aware scoring (the deepest moat) plus editing-app retention patterns and h
 
 ### 3E. Held parity polish (only after de-clone has shipped and settled)
 - Movable/resizable ghost + closer-to-full-screen selfie framing. Deferred to avoid deepening the Photogenik resemblance before the de-clone is established. Revisit once Phase 1 differentiation is live.
+
+---
+
+## Competitive Gap Analysis (2026-07-22)
+
+Honest scope note: competitor detail here comes only from the Photogenik screenshots shared in-session (ivory mannequin ghost, movable/resizable ghost, near-full-screen selfie framing, onboarding, face-scan "your angles" report). No competitor feature inventory beyond that is assumed. Everything about **our** app below was verified against the working tree.
+
+**The gaps that would actually hurt at launch, ranked:**
+
+1. **Content depth — the biggest risk, and it is not a code problem.** 10 poses total. Anyone who subscribes and finds 10 poses churns or refunds. Worse: only 6 of 10 have ivory-mannequin ghosts, and **two of the three free poses (`mirror-selfie`, `hands-pockets`) have no ghost at all** — they fall back to the crude drawn silhouette. The free tier *is* the conversion demo; it currently shows the weakest artwork in the app. Fix the free three first, then scale the library.
+2. **Android cannot monetise and has no first run.** Verified: `MainActivity` has exactly three routes (`home`, `library`, `camera`). No onboarding, no paywall, no favourites. Phase 1 Task 9 adds Superwall, but onboarding and favourites are still absent. Shipping Android without a first-run experience wastes the install.
+3. **iOS has never been executed.** Every iOS verification to date is compile + simulator tests on CI. No build has run on a physical iPhone — camera behaviour, thermal, Vision accuracy, ghost legibility over a real feed, and haptics are all unknown. This is the single largest unknown in the project and needs the Mac/device.
+4. **No product analytics.** Superwall reports paywall events; nothing reports the funnel *into* it (onboarding step drop-off, first-shot completion, poses attempted, capture success). For a freemium app this is flying blind — you cannot improve conversion you cannot see.
+5. **No payoff at capture.** Shoot → 3-second preview → save to camera roll. Nothing shows the user they got something better than they'd have taken alone, and there is no share path. This is where photo apps earn the subscription.
+6. **Store readiness is unfinished.** Products must exist in App Store Connect / Play Console; screenshots and preview video need a device; Play Data Safety form; age rating; Restore Purchases surfaced (tracked in `docs/RELEASE.md`).
+7. **Accessibility is deferred, and Phase 1.5 adds risk.** Dynamic Type was deferred during the design pass; VoiceOver on the camera surface is unaddressed; any colour-coded state must carry a text label (already required by Phase 1.5 Stage 0).
+8. **No retention loop.** Nothing brings a user back tomorrow. Streaks/recipes sit in Phase 3.
+
+**Deliberately not doing** (decided, do not revisit): LiDAR depth scanning (Phase 2 rationale); output photo editing (users edit in their own tools); face/beauty scanning (ethical line — we rate pose and light, never the person).
+
+---
+
+## Phase 4 — Launch Readiness
+
+Everything that must be true before a public release, independent of new differentiators. Several items are **not code** and are on the user's critical path.
+
+### 4A. Content depth (user-owned pipeline, highest priority)
+- Ghost mannequins for the 4 poses missing them, **starting with the two free poses** (`mirror-selfie`, `hands-pockets`) — the free tier is the demo and currently renders the fallback silhouette.
+- Grow the library well beyond 10. Target a minimum that makes each of the 6 collections feel populated (≥5 per collection, couples excepted until Phase 2B).
+- Pipeline already documented in `docs/POSE-PHOTOS.md`. Authoring is user-supplied, as with the existing photos.
+
+### 4B. Android parity
+- Port onboarding (6 steps, soft-gated identically to iOS) and favourites to Compose.
+- Confirm Superwall Android placements match iOS (`pose_unlock`, `onboarding_complete`).
+- Thermal/frame-rate guard equivalent to the iOS `processEveryNthFrame` path.
+- **Acceptance:** an Android user gets the same first run, the same gating, and the same free tier as iOS.
+
+### 4C. On-device QA (blocked on Mac + iPhone)
+- First physical-device run of the iOS app: camera framing, front/rear mirroring, Vision accuracy, ghost legibility over a live feed, haptics, thermal behaviour, capture WYSIWYG.
+- Phase 1.5 Stage 3 polish (aligned-ghost opacity, smoothing) folds in here.
+- Existing device checklist lives in `docs/RELEASE.md`.
+
+### 4D. Analytics + funnel instrumentation
+- Instrument: onboarding step completion, first-shot completion, poses attempted vs captured, collection opens, lock-tap → paywall → purchase.
+- On-device-respecting and privacy-safe; disclose in the privacy policy and Play Data Safety form.
+- **Acceptance:** the onboarding→first-shot→purchase funnel is measurable before launch, not after.
+
+### 4E. Capture payoff + sharing
+- Redesign the post-capture moment so the user sees a win (the shot alongside the pose they matched; keep/retake with intent). Add a share path.
+- Ties to Phase 3C ("recipes") — a saved shot should be reopenable.
+
+### 4F. Accessibility + localisation
+- Dynamic Type across all surfaces (watch fixed card heights — `ModeCard` 140 / `CollectionCard` 150 were flagged as overflow risks at XXL).
+- VoiceOver labels on camera controls and collection cards.
+- No colour-only state anywhere (enforced from Phase 1.5 Stage 0).
+- Localisation is optional for v1; decide before store copy is finalised.
+
+### 4G. Store submission
+- ASC/Play products created and priced; trial configured; Restore Purchases reachable.
+- Screenshots + preview video (needs device); ASO keywords.
+- Play Data Safety, age rating, content rating.
+- All App Review blockers in `docs/RELEASE.md` cleared.
+
+---
+
+## Recommended Order
+
+1. **Phase 1** (in flight) — finish Android tasks 7–10.
+2. **Phase 1.5 Stage 0 + 1** — credibility fix. Small, and every later feature inherits its trust.
+3. **Phase 4A + 4B** — content depth and Android parity. These are what make the product feel finished; 4A is user-owned and should start in parallel immediately.
+4. **Phase 4C** — device QA, the moment hardware is available. Unblocks everything unverifiable.
+5. **Phase 1.5 Stage 2 + 3** — aligned ghost, once anchors are authored and a device exists to tune on.
+6. **Phase 4D/4E/4F/4G** — instrumentation, payoff, accessibility, submission.
+7. **Phase 2** — light coaching (headline differentiator), then couples, then technique profile.
+8. **Phase 3** — 3D scoring and retention.
+
+Launch does not require Phases 2–3. It requires Phase 1, Phase 1.5 Stage 0–1, and Phase 4.
 
 ---
 

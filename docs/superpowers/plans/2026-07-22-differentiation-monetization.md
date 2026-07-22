@@ -12,7 +12,10 @@
 
 - **Design bar (binding):** first-party Apple polish. Noir Editorial palette — `#0E0E11` near-black, `#F6F4EF` warm white, `#C9A96A` champagne gold. Serif display + sans body. All new UI routes through `Theme` (iOS) / `Theme` (Android) tokens — never hardcode colors, spacing, radii, or type.
 - **De-clone rule:** eliminate Photogenik-exact strings from user-facing copy — `pose me`, `guide me`, `shooting modes`, `choose a pose`, `describe your shot`. New IA leads with shooting intent, not camera mode.
-- **Cross-platform parity:** every user-facing behavior lands on iOS **and** Android. A task is not done until both platforms carry it (or a follow-up parity task is queued in the same phase).
+- **iOS-first (decision 2026-07-22 — supersedes the original parity rule).** Android is **parked** after Phase 1 Task 8. New feature work targets iOS only; a task is done when iOS carries it. Rationale: every remaining differentiator costs 2× and the Android half is the harder half (Phase 2 light coaching is ARKit *and* ARCore — unrelated SDKs; Phase 1.5's aligned ghost and Phase 3's 3D scoring are two rendering implementations each). Android was already behind (no onboarding, paywall, or favourites), premium photo subscriptions monetise far better on iOS, and the binding design bar is explicitly first-party Apple polish.
+  - **Android park state:** builds and runs, intent-grid Home + collection screen + de-cloned copy shipped, **all poses open** (lock badges removed — showing them without a purchase path meant badges that lied). `PremiumGate.kt` and `IntentCollection.kt` remain in place, in parity with iOS, for when Android resumes.
+  - **Shared libraries stay in parity.** `PoseKit` / `android/posekit` are already built and tested (45 tests each); keep the Kotlin port in sync when shared logic changes — it is cheap and preserves the option to resume.
+  - **Known cost:** Android is currently the only platform that can actually be *run* (iOS has never executed on hardware — no Mac, Apple Developer account pending). Parking it degrades the feedback loop to nothing until that account lands, which makes Apple Developer enrolment the project's hard critical path.
 - **Windows-only dev:** no Mac in this environment. PoseKit (Swift) compiles and tests locally via the Swift toolchain. The iOS **app** (UIKit/SwiftUI) cannot be built locally — iOS app changes are verified by pushing to CI (`xcodebuild`), never claimed as runtime-verified. Android is verified locally on the emulator.
 - **Superwall gating lives on the dashboard, not in code.** Placements register a closure that runs on unlock; whether it runs *only after subscribing* depends on the placement being set to **Gated** in the Superwall dashboard. Code must fail safe (never crash / never hard-lock the user out if the SDK is unconfigured). Public key `pk_uNYzMv3S_QisMA3aLYYhR` is already in `App/Config.swift` and is safe in source.
 - **Shared JSON schema stays identical across platforms.** Android reads the iOS bundle verbatim (`App/Resources/Poses` is the Android `assets.srcDir`). Any schema change ships to both parsers in the same task.
@@ -910,7 +913,9 @@ git commit -m "feat(android): intent-grid home + collection screen + de-clone co
 
 ---
 
-### Task 9: Android — freemium gating + paywall bridge
+### Task 9: Android — freemium gating + paywall bridge — **DEFERRED (Android parked 2026-07-22)**
+
+> **Not being built.** The decision gate below was resolved in favour of deferring: Android ships with all poses free and no lock UI, exactly as the fallback branch specifies. The lock badges Task 8 introduced were removed in `34f162a`. Resume this task only if Android is unparked. The rest of this section is retained as the spec for that day.
 
 **Files:**
 - Modify: `android/app/build.gradle` (or `.kts`) — add Superwall Android SDK (verify current version via the Superwall docs before pinning).
@@ -1088,11 +1093,9 @@ Everything that must be true before a public release, independent of new differe
 - Grow the library well beyond 10. Target a minimum that makes each of the 6 collections feel populated (≥5 per collection, couples excepted until Phase 2B).
 - Pipeline already documented in `docs/POSE-PHOTOS.md`. Authoring is user-supplied, as with the existing photos.
 
-### 4B. Android parity
-- Port onboarding (6 steps, soft-gated identically to iOS) and favourites to Compose.
-- Confirm Superwall Android placements match iOS (`pose_unlock`, `onboarding_complete`).
-- Thermal/frame-rate guard equivalent to the iOS `processEveryNthFrame` path.
-- **Acceptance:** an Android user gets the same first run, the same gating, and the same free tier as iOS.
+### 4B. Android parity — **DEFERRED (Android parked 2026-07-22)**
+- Not required for the iOS launch. Retained as the spec for unparking: port onboarding (6 steps, soft-gated identically to iOS) and favourites to Compose; add Superwall Android with placements matching iOS (`pose_unlock`, `onboarding_complete`); restore lock badges once a purchase path exists; add a thermal/frame-rate guard equivalent to the iOS `processEveryNthFrame` path.
+- **Unpark trigger:** iOS has shipped and validated the product. Do not resume before then — the point of parking is to avoid paying 2× for features that are not yet proven.
 
 ### 4C. On-device QA (blocked on Mac + iPhone)
 - First physical-device run of the iOS app: camera framing, front/rear mirroring, Vision accuracy, ghost legibility over a live feed, haptics, thermal behaviour, capture WYSIWYG.
@@ -1124,16 +1127,20 @@ Everything that must be true before a public release, independent of new differe
 
 ## Recommended Order
 
-1. **Phase 1** (in flight) — finish Android tasks 7–10.
+**iOS only** — Android is parked (see Global Constraints).
+
+1. **Phase 1** — Task 10 (docs) closes it out. Tasks 7–8 shipped; Task 9 deferred with Android.
 2. **Phase 1.5 Stage 0 + 1** — credibility fix. Small, and every later feature inherits its trust.
-3. **Phase 4A + 4B** — content depth and Android parity. These are what make the product feel finished; 4A is user-owned and should start in parallel immediately.
-4. **Phase 4C** — device QA, the moment hardware is available. Unblocks everything unverifiable.
+3. **Phase 4A** — content depth. User-owned, the long pole, and should start in parallel **immediately**: the 4 missing ghosts, free two first.
+4. **Phase 4C** — device QA, the moment the Apple Developer account and hardware land. Unblocks everything currently unverifiable.
 5. **Phase 1.5 Stage 2 + 3** — aligned ghost, once anchors are authored and a device exists to tune on.
-6. **Phase 4D/4E/4F/4G** — instrumentation, payoff, accessibility, submission.
+6. **Phase 4D/4E/4F/4G** — instrumentation, capture payoff, accessibility, submission.
 7. **Phase 2** — light coaching (headline differentiator), then couples, then technique profile.
 8. **Phase 3** — 3D scoring and retention.
 
-Launch does not require Phases 2–3. It requires Phase 1, Phase 1.5 Stage 0–1, and Phase 4.
+Launch does not require Phases 2–3. It requires Phase 1, Phase 1.5 Stage 0–1, and Phase 4 (minus the deferred 4B).
+
+**Hard critical path:** Apple Developer enrolment. It now gates device QA, Phase 1.5 Stage 3, Phase 4C, 4G — and, with Android parked, any ability to see the app run at all.
 
 ---
 

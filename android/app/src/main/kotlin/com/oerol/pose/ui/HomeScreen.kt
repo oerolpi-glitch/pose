@@ -19,10 +19,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Accessibility
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.GraphicEq
-import androidx.compose.material.icons.outlined.GridView
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -30,12 +29,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.oerol.pose.data.IntentCollection
 import com.oerol.pose.data.PoseRepository
 import com.oerol.pose.theme.Theme
 import com.oerol.posekit.ReferencePose
@@ -43,6 +44,7 @@ import java.util.Calendar
 
 @Composable
 fun HomeScreen(
+    onOpenCollection: (IntentCollection) -> Unit,
     onOpenLibrary: () -> Unit,
     onOpenCamera: () -> Unit,
     onOpenPose: (ReferencePose) -> Unit,
@@ -70,7 +72,7 @@ fun HomeScreen(
             modifier = Modifier.padding(top = Theme.Spacing.xl),
         )
         Text(
-            "shoot your shot",
+            "what are you shooting today?",
             style = Theme.Typography.screenTitle,
             color = Theme.Colors.foreground,
             modifier = Modifier.padding(top = Theme.Spacing.xs),
@@ -121,42 +123,37 @@ fun HomeScreen(
             }
         }
 
-        PillButton(
-            title = "open camera",
-            onClick = onOpenCamera,
-            modifier = Modifier.padding(top = Theme.Spacing.l),
-        )
-
-        Text(
-            "shooting modes",
-            style = Theme.Typography.sectionTitle,
-            color = Theme.Colors.foreground,
-            modifier = Modifier.padding(top = Theme.Spacing.xl, bottom = Theme.Spacing.m),
-        )
-
-        Row(horizontalArrangement = Arrangement.spacedBy(Theme.Spacing.m)) {
-            ModeCard(
-                title = "pose me",
-                subtitle = "match a reference pose",
-                icon = Icons.Outlined.Accessibility,
-                modifier = Modifier.weight(1f),
-                onClick = onOpenLibrary,
-            )
-            ModeCard(
-                title = "guide me",
-                subtitle = "live posture coaching",
-                icon = Icons.Outlined.GraphicEq,
-                modifier = Modifier.weight(1f),
-                onClick = onOpenCamera,
-            )
+        Spacer(Modifier.height(Theme.Spacing.l))
+        IntentCollection.entries.toList().chunked(2).forEach { row ->
+            Row(
+                Modifier.fillMaxWidth().padding(bottom = Theme.Spacing.m),
+                horizontalArrangement = Arrangement.spacedBy(Theme.Spacing.m),
+            ) {
+                row.forEach { collection ->
+                    CollectionCard(
+                        collection = collection,
+                        modifier = Modifier.weight(1f),
+                        onClick = { if (!collection.comingSoon) onOpenCollection(collection) },
+                    )
+                }
+                if (row.size == 1) Spacer(Modifier.weight(1f))
+            }
         }
 
         WideCard(
-            title = "pose library",
-            subtitle = "browse poses",
-            icon = Icons.Outlined.GridView,
+            title = "live coaching",
+            subtitle = "real-time posture feedback",
+            icon = Icons.Outlined.GraphicEq,
+            onClick = onOpenCamera,
+            modifier = Modifier.padding(bottom = Theme.Spacing.m),
+        )
+
+        WideCard(
+            title = "all poses",
+            subtitle = "search the full library",
+            icon = Icons.Outlined.Search,
             onClick = onOpenLibrary,
-            modifier = Modifier.padding(top = Theme.Spacing.m, bottom = Theme.Spacing.xl),
+            modifier = Modifier.padding(bottom = Theme.Spacing.xl),
         )
     }
 }
@@ -177,27 +174,30 @@ fun PillButton(title: String, onClick: () -> Unit, modifier: Modifier = Modifier
 }
 
 @Composable
-private fun ModeCard(
-    title: String,
-    subtitle: String,
-    icon: ImageVector,
+private fun CollectionCard(
+    collection: IntentCollection,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
         modifier
-            .height(140.dp)
+            .height(150.dp)
             .clip(Theme.Radius.cardShape)
             .background(Theme.Colors.surface)
             .border(1.dp, Theme.Colors.hairline, Theme.Radius.cardShape)
             .clickable(onClick = onClick)
-            .padding(Theme.Spacing.m),
+            .padding(Theme.Spacing.m)
+            .alpha(if (collection.comingSoon) 0.55f else 1f),
     ) {
-        Icon(icon, contentDescription = null, tint = Theme.Colors.accent,
+        Icon(collection.icon, contentDescription = null, tint = Theme.Colors.accent,
             modifier = Modifier.size(24.dp))
         Spacer(Modifier.weight(1f))
-        Text(title, style = Theme.Typography.sectionTitle, color = Theme.Colors.foreground)
-        Text(subtitle, style = Theme.Typography.caption, color = Theme.Colors.secondary)
+        Text(collection.title, style = Theme.Typography.sectionTitle, color = Theme.Colors.foreground)
+        Text(
+            if (collection.comingSoon) "coming soon" else collection.subtitle,
+            style = Theme.Typography.caption,
+            color = Theme.Colors.secondary,
+        )
     }
 }
 

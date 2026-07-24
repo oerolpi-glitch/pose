@@ -1,4 +1,5 @@
 {"id":"seated-casual","title":"seated casual","tags":["casual","seated"],
+ "collections":["candid","dating"],
  "joints":{"nose":[0.5,0.19],"leftEye":[0.53,0.17],"rightEye":[0.47,0.17],
  "leftEar":[0.555,0.185],"rightEar":[0.445,0.185],"neck":[0.5,0.27],
  "leftShoulder":[0.585,0.285],"rightShoulder":[0.415,0.285],

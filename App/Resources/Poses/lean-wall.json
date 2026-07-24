@@ -1,4 +1,5 @@
 {"id":"lean-wall","title":"lean on wall","tags":["editorial","casual","full-body"],
+ "collections":["candid","dating"],
  "joints":{"nose":[0.46,0.15],"leftEye":[0.49,0.13],"rightEye":[0.43,0.13],
  "leftEar":[0.515,0.145],"rightEar":[0.405,0.145],"neck":[0.47,0.23],
  "leftShoulder":[0.55,0.24],"rightShoulder":[0.385,0.245],

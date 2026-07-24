@@ -6,7 +6,7 @@ import PoseKit
 
 @MainActor
 final class CameraViewModel: NSObject, ObservableObject {
-    @Published var score: Float?
+    @Published var readiness: PoseReadiness?
     @Published var hintText: String?
     @Published var bodyDetected = true
     @Published var autoCaptureProgress: Double = 0
@@ -27,6 +27,7 @@ final class CameraViewModel: NSObject, ObservableObject {
     /// instead of trembling with per-frame Vision noise.
     private let poseSmoother = PoseSmoother()
     private var scoreSmoother = ScoreSmoother()
+    private var readinessGate = ReadinessGate()
     private let detectionQueue = DispatchQueue(label: "pose.detection", qos: .userInitiated)
     private var viewSize: CGSize = .zero
     private var holdStart: Date?
@@ -42,10 +43,6 @@ final class CameraViewModel: NSObject, ObservableObject {
     /// shot fire for the same moment — this closes that window.
     private var captureInFlight = false
 
-    static let autoCaptureThreshold: Float = 0.92
-    /// Every scored limb must also match this well, so the shape — not just the
-    /// Procrustes average — is right before an unattended shot fires.
-    static let autoCaptureWorstLimb: Float = 0.8
     static let autoCaptureRearm: Float = 0.7
     static let autoCaptureHoldSeconds: TimeInterval = 1.2
     static let previewDismissSeconds: TimeInterval = 3.0
@@ -109,10 +106,11 @@ final class CameraViewModel: NSObject, ObservableObject {
     nonisolated private func processFrame(pose: PoseVector?, bufferSize: CGSize) {
         guard let pose else {
             Task { @MainActor in
-                self.score = nil
+                self.readiness = nil
                 self.bodyDetected = false
                 self.scoreSmoother.reset()
-                self.updateHold(score: nil)
+                self.readinessGate.reset()
+                self.updateHold(overall: nil, readiness: nil)
             }
             return
         }
@@ -140,35 +138,37 @@ final class CameraViewModel: NSObject, ObservableObject {
                 if let target = self.targetPose,
                    let result = PoseScorer.score(reference: target.poseVector, live: kitPose) {
                     let display = self.scoreSmoother.smooth(result.overall)
-                    self.score = display
-                    self.hintText = result.hint
                     let worstLimb = LimbSimilarity.worstBone(reference: target.poseVector,
                                                              live: kitPose)?.score ?? 0
-                    self.updateHold(score: display, worstLimb: worstLimb)
+                    let raw = PoseReadiness.from(overall: display, worstLimb: worstLimb)
+                    self.readiness = self.readinessGate.update(raw)
+                    self.hintText = result.hint
+                    self.updateHold(overall: display, readiness: self.readiness)
                 } else {
-                    self.score = nil
+                    self.readiness = nil
                     self.hintText = nil
                     self.scoreSmoother.reset()
-                    self.updateHold(score: nil, worstLimb: 0)
+                    self.readinessGate.reset()
+                    self.updateHold(overall: nil, readiness: nil)
                 }
             case .guideMe:
-                self.score = nil
+                self.readiness = nil
                 self.hintText = PostureHeuristics.hints(for: kitPose).first?.message
             }
         }
     }
 
-    private func updateHold(score: Float?, worstLimb: Float = 0) {
+    private func updateHold(overall: Float?, readiness: PoseReadiness?) {
         guard mode == .poseMe else { return }
         // Re-arm once the pose is broken, so one held pose = one photo.
-        if let s = score, s < Self.autoCaptureRearm { armed = true }
+        if let overall, overall < Self.autoCaptureRearm { armed = true }
 
         guard handsFree, capturedImage == nil, !captureInFlight, armed else {
             holdStart = nil
             autoCaptureProgress = 0
             return
         }
-        if let s = score, s >= Self.autoCaptureThreshold, worstLimb >= Self.autoCaptureWorstLimb {
+        if readiness == .hold {
             if holdStart == nil { holdStart = Date() }
             let held = Date().timeIntervalSince(holdStart!)
             autoCaptureProgress = min(held / Self.autoCaptureHoldSeconds, 1)

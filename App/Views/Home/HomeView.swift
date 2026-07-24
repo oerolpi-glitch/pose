@@ -15,7 +15,8 @@ struct HomeView: View {
     }()
 
     enum HomeRoute: Hashable {
-        case library
+        case collection(IntentCollection)
+        case allPoses
         case camera(ShootingMode)
         case poseCamera(String)
     }
@@ -30,7 +31,7 @@ struct HomeView: View {
                         .foregroundStyle(Theme.Colors.accent)
                         .padding(.top, Theme.Spacing.xl)
 
-                    Text("shoot your shot")
+                    Text("what are you shooting today?")
                         .font(Theme.Typography.screenTitle)
                         .themedDisplay()
                         .foregroundStyle(Theme.Colors.foreground)
@@ -44,35 +45,31 @@ struct HomeView: View {
                         .padding(.top, Theme.Spacing.l)
                     }
 
-                    PillButton(title: "open camera") {
-                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                        path.append(HomeRoute.camera(.guideMe))
+                    LazyVGrid(columns: [GridItem(.flexible(), spacing: Theme.Spacing.m),
+                                        GridItem(.flexible(), spacing: Theme.Spacing.m)],
+                              spacing: Theme.Spacing.m) {
+                        ForEach(IntentCollection.allCases) { collection in
+                            CollectionCard(collection: collection) {
+                                guard !collection.comingSoon else { return }
+                                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                                path.append(HomeRoute.collection(collection))
+                            }
+                        }
                     }
                     .padding(.top, Theme.Spacing.l)
 
-                    Text("shooting modes")
-                        .font(Theme.Typography.sectionTitle)
-                        .foregroundStyle(Theme.Colors.foreground)
-                        .padding(.top, Theme.Spacing.xl)
-                        .padding(.bottom, Theme.Spacing.m)
-
-                    HStack(spacing: Theme.Spacing.m) {
-                        ModeCard(title: ShootingMode.poseMe.title,
-                                 subtitle: ShootingMode.poseMe.subtitle,
-                                 systemImage: "figure.stand") {
-                            path.append(HomeRoute.library) // pose-me starts from picking a pose
-                        }
-                        ModeCard(title: ShootingMode.guideMe.title,
-                                 subtitle: ShootingMode.guideMe.subtitle,
-                                 systemImage: "waveform.badge.mic") {
-                            path.append(HomeRoute.camera(.guideMe))
-                        }
+                    WideCard(title: "live coaching",
+                             subtitle: "real-time posture feedback",
+                             systemImage: "waveform.badge.mic") {
+                        path.append(HomeRoute.camera(.guideMe))
                     }
+                    .padding(.top, Theme.Spacing.m)
 
-                    WideCard(title: "pose library",
-                             subtitle: "browse poses",
-                             systemImage: "square.grid.2x2") {
-                        path.append(HomeRoute.library)
+                    WideCard(title: "all poses",
+                             subtitle: "search the full library",
+                             systemImage: "magnifyingglass") {
+                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                        path.append(HomeRoute.allPoses)
                     }
                     .padding(.top, Theme.Spacing.m)
                 }
@@ -83,7 +80,11 @@ struct HomeView: View {
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: HomeRoute.self) { route in
                 switch route {
-                case .library:
+                case .collection(let collection):
+                    CollectionView(collection: collection) { pose in
+                        path.append(HomeRoute.poseCamera(pose.id))
+                    }
+                case .allPoses:
                     PoseLibraryView { pose in
                         path.append(HomeRoute.poseCamera(pose.id))
                     }
@@ -96,6 +97,40 @@ struct HomeView: View {
             }
         }
         .tint(Theme.Colors.accent)
+    }
+}
+
+/// One shooting intent in the home grid — the primary entry point into the
+/// library, filtered to that intent. Collections without shipped poses yet
+/// (`comingSoon`) render dimmed and inert rather than disappearing, so users
+/// see the full breadth of what Pose is building toward.
+private struct CollectionCard: View {
+    let collection: IntentCollection
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: Theme.Spacing.s) {
+                Image(systemName: collection.systemImage)
+                    .font(Theme.Icon.feature())
+                    .foregroundStyle(Theme.Colors.accent)
+                Spacer(minLength: Theme.Spacing.l)
+                Text(collection.title)
+                    .font(Theme.Typography.sectionTitle)
+                    .foregroundStyle(Theme.Colors.foreground)
+                Text(collection.comingSoon ? "coming soon" : collection.subtitle)
+                    .font(Theme.Typography.caption)
+                    .foregroundStyle(Theme.Colors.secondary)
+            }
+            .frame(maxWidth: .infinity, minHeight: 150, alignment: .leading)
+            .padding(Theme.Spacing.m)
+            .background(RoundedRectangle(cornerRadius: Theme.Radius.card).fill(Theme.Colors.surface))
+            .overlay(RoundedRectangle(cornerRadius: Theme.Radius.card)
+                .strokeBorder(Theme.Colors.hairline, lineWidth: 1))
+            .opacity(collection.comingSoon ? 0.55 : 1)
+        }
+        .buttonStyle(.pressable)
+        .disabled(collection.comingSoon)
     }
 }
 

@@ -1,4 +1,4 @@
-# Pose — Release & App Review Checklist
+# PoseView — Release & App Review Checklist
 
 Everything that must be true before this app is submitted. Grouped by where the
 work lives. Items marked **BLOCKER** will get the app rejected or make the
@@ -6,14 +6,13 @@ paywall give paid features away for free.
 
 ## 1. Secrets & config (`App/Config.swift`)
 
-- [ ] **BLOCKER** Replace `superwallAPIKey = "pk_REPLACE_ME"` with the real
-      Superwall **public** key (Superwall dashboard → Settings → Keys). With the
-      placeholder, the `onboarding_complete` placement never resolves and the
-      paywall cannot present.
-- [ ] Point `termsURL` and `privacyURL` at real, hosted pages that actually
-      load. Apple rejects dead legal links. These are surfaced in-app on the
-      final onboarding screen (`CustomPlanStep.legalFooter`) and must also be on
-      the Superwall paywall template (below).
+- [x] `superwallAPIKey` holds the real Superwall **public** key. (A placeholder
+      here means the `onboarding_complete` placement never resolves and the
+      paywall cannot present.)
+- [x] `termsURL` and `privacyURL` point at live GitHub Pages. Apple rejects dead
+      legal links. These are surfaced in-app on the final onboarding screen
+      (`CustomPlanStep.legalFooter`) and must also be on the Superwall paywall
+      template (below) — **that half is still open.**
 
 ## 2. Superwall dashboard (not in this repo — the paywall's behavior lives here)
 
@@ -27,7 +26,7 @@ different gating — getting these backwards breaks the model:
 
 **Free tier (do not gate these):** live coaching, plus the three starter poses
 `classic-stand`, `mirror-selfie`, `hands-pockets` (marked `"free":true` in their
-pose JSON). Everything else is Pose+.
+pose JSON). Everything else is PoseView+.
 
 Onboarding calls `appState.completeOnboarding()` **before** presenting
 `onboarding_complete`, so entry never depends on the paywall. That is
@@ -53,7 +52,8 @@ all poses open. No Superwall configuration is required for Android.
 
 ## 3. App Store Connect
 
-- [ ] Create the app, bundle id `com.oerol.pose`.
+- [ ] Create the app, name **PoseView: Smart Pose Assistant**, bundle id
+      `com.oerol.pose`.
 - [ ] Create auto-renewable subscriptions `pose_annual_trial` (with a 3-day
       free-trial introductory offer) and `pose_monthly`; attach both to the
       Superwall dashboard paywall.
@@ -62,8 +62,9 @@ all poses open. No Superwall configuration is required for Android.
       update the label.
 - [ ] App description: emphasize on-device privacy and real-time coaching. Do
       not overclaim the AI — describe skeletal tracking, not diagnosis.
-- [ ] Screenshots (6.7" + 6.1"): camera with live skeleton + score, the pose
-      library grid, home, and an auto-capture moment.
+- [ ] Screenshots (6.7" + 6.1"): camera with live skeleton + readiness chip,
+      the pose library grid, home, and an auto-capture moment. No percentage
+      appears in the UI any more — do not stage a shot implying one.
 
 ## 4. Release-build integrity
 

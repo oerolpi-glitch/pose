@@ -1,4 +1,4 @@
-# Pose — App Store listing
+# PoseView — App Store listing
 
 Copy-paste source for App Store Connect. Written for conversion: lead with the
 outcome (never freeze in photos), prove the mechanism (live AI coaching),
@@ -6,7 +6,7 @@ close with privacy (on-device) — the one claim competitors can't match.
 
 ## Name (30 chars max)
 
-> Pose: AI Photo Coach
+> PoseView: Smart Pose Assistant
 
 ## Subtitle (30 chars max)
 
@@ -21,11 +21,11 @@ close with privacy (on-device) — the one claim competitors can't match.
 
 > **Never freeze in front of a camera again.**
 >
-> Pose is a real-time posing coach that lives inside your camera. Tell it what
-> you're shooting, pick a pose, and a live guide walks your body into it.
+> PoseView is a real-time posing coach that lives inside your camera. Tell it
+> what you're shooting, pick a pose, and a live guide walks your body into it.
 >
 > **START WITH THE SHOT, NOT THE POSE** — Dating and profile pictures.
-> Professional headshots. Mirror selfies. Full-body. Candid. Pose organises
+> Professional headshots. Mirror selfies. Full-body. Candid. PoseView organises
 > every pose around what you're actually trying to capture, so you're not
 > scrolling a grid wondering what fits.
 >
@@ -36,7 +36,7 @@ close with privacy (on-device) — the one claim competitors can't match.
 > **MATCH THE GUIDE** — Each pose shows an on-screen guide to line up with,
 > and tells you which part to adjust as you move.
 >
-> **HANDS-FREE WHEN YOU WANT IT** — Turn on auto-capture and Pose takes the
+> **HANDS-FREE WHEN YOU WANT IT** — Turn on auto-capture and PoseView takes the
 > shot once you're holding the pose. Off by default; the shutter is yours.
 >
 > **A LIBRARY THAT LOOKS LIKE A MAGAZINE** — Every pose is photographed in a
@@ -47,9 +47,9 @@ close with privacy (on-device) — the one claim competitors can't match.
 > No account, no uploads, no ads.
 >
 > **Free to start.** Live coaching and a set of starter poses are free, no
-> subscription. Pose+ unlocks the full library and every collection. Payment is
-> charged to your Apple account; subscriptions renew automatically unless
-> cancelled at least 24 hours before the period ends.
+> subscription. PoseView+ unlocks the full library and every collection.
+> Payment is charged to your Apple account; subscriptions renew automatically
+> unless cancelled at least 24 hours before the period ends.
 > Terms: https://oerolpi-glitch.github.io/pose/legal/terms.html
 > Privacy: https://oerolpi-glitch.github.io/pose/legal/privacy.html
 
@@ -81,10 +81,10 @@ do NOT blindly claim "Data Not Collected" with the SDK integrated.
 
 Order tells the story: outcome → mechanism → library → privacy.
 
-1. Camera with live skeleton + 96% score chip — caption "your personal
-   posing coach"
-2. Pose-me with ghost overlay mid-adjustment — caption "match the pose,
-   watch your score climb"
+1. Camera with live skeleton + readiness chip reading "adjust" — caption
+   "your personal posing coach"
+2. Ghost overlay mid-adjustment, chip reading "hold" — caption "match the
+   guide, hold it, done"
 3. Auto-capture moment (gold ring full) — caption "hands-free the moment
    you nail it"
 4. Library grid of model photos — caption "a pose library that looks like

@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
     <key>CFBundleDevelopmentRegion</key><string>en</string>
-    <key>CFBundleDisplayName</key><string>Pose</string>
+    <key>CFBundleDisplayName</key><string>PoseView</string>
     <key>CFBundleExecutable</key><string>$(EXECUTABLE_NAME)</string>
     <key>CFBundleIdentifier</key><string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
     <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
@@ -20,8 +20,8 @@
     <key>UISupportedInterfaceOrientations</key>
     <array><string>UIInterfaceOrientationPortrait</string></array>
     <key>NSCameraUsageDescription</key>
-    <string>Pose uses the camera to detect your body position and coach you into great photos in real time. Video is processed on your device and never uploaded.</string>
+    <string>PoseView uses the camera to detect your body position and coach you into great photos in real time. Video is processed on your device and never uploaded.</string>
     <key>NSPhotoLibraryAddUsageDescription</key>
-    <string>Pose saves the photos you capture to your photo library.</string>
+    <string>PoseView saves the photos you capture to your photo library.</string>
 </dict>
 </plist>

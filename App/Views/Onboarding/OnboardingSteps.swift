@@ -298,7 +298,7 @@ struct CustomPlanStep: View {
                 }
                 .padding(.top, Theme.Spacing.s)
 
-                Button("see everything in Pose+") {
+                Button("see everything in PoseView+") {
                     appState.unlock(placement: "onboarding_complete") { }
                 }
                 .font(Theme.Typography.caption)

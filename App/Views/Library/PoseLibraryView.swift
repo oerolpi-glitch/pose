@@ -6,9 +6,10 @@ struct PoseLibraryView: View {
     @StateObject private var viewModel = PoseLibraryViewModel()
     @StateObject private var favorites = FavoritesStore()
     @EnvironmentObject private var appState: AppState
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     var onSelect: ((ReferencePose) -> Void)?
 
-    private let columns = [GridItem(.flexible(), spacing: Theme.Spacing.m), GridItem(.flexible(), spacing: Theme.Spacing.m)]
+    private var columns: [GridItem] { Theme.poseGridColumns(for: dynamicTypeSize) }
 
     var body: some View {
         ScrollView {
@@ -118,6 +119,18 @@ struct PoseCard: View {
             }
         }
         .buttonStyle(.pressable)
+        // The heart is a Button nested inside the card's Button, which VoiceOver
+        // cannot reach as its own stop. Exposing it as a custom action puts it
+        // in the actions rotor instead, which is the supported path for a
+        // secondary action on a card.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(pose.title)
+        .accessibilityValue(isLocked ? "locked" : "")
+        .accessibilityHint(isLocked ? "unlock to use this pose" : "starts the camera on this pose")
+        .accessibilityAddTraits(.isButton)
+        .accessibilityAction(named: isFavorite ? "remove from favourites" : "add to favourites") {
+            onFavorite()
+        }
     }
 
     @ViewBuilder

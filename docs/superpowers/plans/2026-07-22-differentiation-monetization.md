@@ -1121,11 +1121,24 @@ Everything that must be true before a public release, independent of new differe
 - Redesign the post-capture moment so the user sees a win (the shot alongside the pose they matched; keep/retake with intent). Add a share path.
 - Ties to Phase 3C ("recipes") — a saved shot should be reopenable.
 
-### 4F. Accessibility + localisation
+### 4F. Accessibility + localisation — **LARGELY SHIPPED (iOS, 2026-07-25)**
 - Dynamic Type across all surfaces (watch fixed card heights — `ModeCard` 140 / `CollectionCard` 150 were flagged as overflow risks at XXL).
 - VoiceOver labels on camera controls and collection cards.
 - No colour-only state anywhere (enforced from Phase 1.5 Stage 0).
 - Localisation is optional for v1; decide before store copy is finalised.
+
+**As built.** The audit found the app had **zero** accessibility labels — VoiceOver was entirely unaddressed, not merely incomplete. Worst case: the shutter is a filled `Circle` inside a `Button`, so the app's primary control announced nothing at all. Every control is now labelled: shutter, close, camera flip (with front/rear as value), hands-free (with on/off as value plus a hint saying what it automates), readiness chip (label + value, so "hold" is not announced as a bare word), pose cards, collection cards, the daily cover, tag chips, and the onboarding progress bar.
+
+Three findings worth recording:
+- **`ModeCard` was dead code** — a de-clone leftover from the "pose me / guide me" home, defined and never referenced. Its flagged 140pt height was not a Dynamic Type risk, it was a deletion. Removed.
+- **`CollectionCard`'s 150pt was `minHeight`, so it grows rather than clipping.** The real Dynamic Type defect was elsewhere: two-column grids stay two columns at accessibility sizes, which is what makes cards grow disproportionately tall. `Theme.poseGridColumns(for:)` now collapses every pose grid to one column at `isAccessibilitySize`, shared so they all break at the same point.
+- **The favourite heart is a `Button` nested inside the card's `Button`,** which VoiceOver cannot reach as its own stop. Exposed as an `accessibilityAction` on the card (the actions rotor) rather than restructuring the card.
+
+Live coaching surfaces (readiness chip, hint bubble, body map) carry `.updatesFrequently` so VoiceOver re-reads them instead of caching a stale value.
+
+**Deliberately NOT done — `Theme.Icon` does not scale with Dynamic Type.** Every role is a fixed `.system(size:)`, so SF Symbols stay put while text triples. `Theme.Typography` was converted to text styles in an earlier pass; `Theme.Icon` never was. The fix (text styles, or `@ScaledMetric` at call sites) changes icon sizing on every screen, and that is a visual change that should not be made blind from Windows. **Do this with a simulator or device in front of you**, and leave the camera HUD roles (`Icon.control`) fixed — Apple's own Camera controls do not scale either.
+
+Unverified: all of the above is compile-verified only. VoiceOver behaviour and the accessibility-size layouts need the Accessibility Inspector or a device.
 
 ### 4G. Store submission
 - ASC/Play products created and priced; trial configured; Restore Purchases reachable.

@@ -26,5 +26,9 @@ struct TagChip: View {
         }
         .buttonStyle(.pressable)
         .animation(Theme.Motion.spring, value: isSelected)
+        // Selection is carried visually by the gold fill alone; the trait is
+        // what makes it exist for VoiceOver.
+        .accessibilityLabel(label)
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 }

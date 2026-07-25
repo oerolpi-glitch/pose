@@ -7,11 +7,11 @@ struct CollectionView: View {
     var onSelect: (ReferencePose) -> Void
 
     @EnvironmentObject private var appState: AppState
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @StateObject private var favorites = FavoritesStore()
 
     private var poses: [ReferencePose] { PoseLibraryService().poses(in: collection) }
-    private let columns = [GridItem(.flexible(), spacing: Theme.Spacing.m),
-                           GridItem(.flexible(), spacing: Theme.Spacing.m)]
+    private var columns: [GridItem] { Theme.poseGridColumns(for: dynamicTypeSize) }
 
     var body: some View {
         ScrollView {

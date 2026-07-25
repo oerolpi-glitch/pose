@@ -50,5 +50,8 @@ struct OnboardingFlow: View {
         .frame(height: 4)
         .padding(.horizontal, Theme.Spacing.xl)
         .padding(.top, Theme.Spacing.s)
+        .accessibilityElement()
+        .accessibilityLabel("setup progress")
+        .accessibilityValue("\(Int(viewModel.step.progress * 100)) percent")
     }
 }

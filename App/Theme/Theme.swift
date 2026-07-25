@@ -99,6 +99,18 @@ enum Theme {
         static let pill: CGFloat = 999
     }
 
+    /// Two columns normally, one at accessibility text sizes. A pose card is
+    /// title over imagery; at the largest sizes the title alone outgrows a
+    /// half-width column, so the grid drops to a single column rather than
+    /// letting cards grow disproportionately tall. Shared by every pose grid so
+    /// they break at the same point.
+    static func poseGridColumns(for size: DynamicTypeSize) -> [GridItem] {
+        size.isAccessibilitySize
+            ? [GridItem(.flexible())]
+            : [GridItem(.flexible(), spacing: Spacing.m),
+               GridItem(.flexible(), spacing: Spacing.m)]
+    }
+
     /// One spring for every state change in the app, so press feedback,
     /// selection, and screen transitions all move with the same physics.
     enum Motion {

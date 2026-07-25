@@ -19,16 +19,7 @@ public enum Bone: String, CaseIterable, Sendable {
         }
     }
 
-    public var coachingName: String {
-        switch self {
-        case .leftUpperArm, .leftForearm:   return "left arm"
-        case .rightUpperArm, .rightForearm: return "right arm"
-        case .leftThigh, .leftShin:         return "left leg"
-        case .rightThigh, .rightShin:       return "right leg"
-        case .torso:                        return "torso"
-        case .neck:                         return "head"
-        }
-    }
+    public var coachingName: String { region.label }
 }
 
 /// Per-bone cosine similarity between reference and live pose directions.
@@ -61,5 +52,34 @@ public enum LimbSimilarity {
     public static func worstBone(reference: PoseVector, live: PoseVector) -> (bone: Bone, score: Float)? {
         boneScores(reference: reference, live: live).min { $0.value < $1.value }
             .map { (bone: $0.key, score: $0.value) }
+    }
+
+    /// A region scores as its **worst** bone, never its mean. A forearm pointing
+    /// the wrong way must not be averaged away by a correct upper arm — the
+    /// whole point of the region view is to name the thing that is actually off.
+    /// Regions whose bones are all missing are omitted rather than scored 0, so
+    /// a limb outside the frame reads as unknown instead of wrong.
+    public static func regionScores(reference: PoseVector, live: PoseVector) -> [BodyRegion: Float] {
+        var out: [BodyRegion: Float] = [:]
+        for (bone, score) in boneScores(reference: reference, live: live) {
+            let region = bone.region
+            out[region] = min(out[region] ?? score, score)
+        }
+        return out
+    }
+
+    /// A region is marked "off" exactly when it is one of the limbs holding
+    /// `hold` back. Deliberately reuses `ReadinessThresholds.holdWorstLimb`
+    /// rather than introducing a second number: if the map used its own
+    /// threshold it could mark a limb while the chip reads `hold`, which is the
+    /// credibility bug Stage 0 removed, rebuilt somewhere new.
+    public static var regionOffThreshold: Float { ReadinessThresholds.holdWorstLimb }
+
+    /// The regions the body map marks. Empty means every tracked limb passed —
+    /// silence is the signal for "correct".
+    public static func offRegions(reference: PoseVector, live: PoseVector) -> Set<BodyRegion> {
+        Set(regionScores(reference: reference, live: live)
+            .filter { $0.value < regionOffThreshold }
+            .keys)
     }
 }

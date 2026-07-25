@@ -7,6 +7,10 @@ import PoseKit
 @MainActor
 final class CameraViewModel: NSObject, ObservableObject {
     @Published var readiness: PoseReadiness?
+    /// Body regions currently off the target pose — the body map marks these and
+    /// nothing else. Empty whenever `readiness` is `.hold`: both gate on the
+    /// same worst-limb threshold, so the map cannot contradict the chip.
+    @Published var offRegions: Set<BodyRegion> = []
     @Published var hintText: String?
     @Published var bodyDetected = true
     @Published var autoCaptureProgress: Double = 0
@@ -28,6 +32,7 @@ final class CameraViewModel: NSObject, ObservableObject {
     private let poseSmoother = PoseSmoother()
     private var scoreSmoother = ScoreSmoother()
     private var readinessGate = ReadinessGate()
+    private var regionGate = RegionGate()
     private let detectionQueue = DispatchQueue(label: "pose.detection", qos: .userInitiated)
     private var viewSize: CGSize = .zero
     private var holdStart: Date?
@@ -107,9 +112,11 @@ final class CameraViewModel: NSObject, ObservableObject {
         guard let pose else {
             Task { @MainActor in
                 self.readiness = nil
+                self.offRegions = []
                 self.bodyDetected = false
                 self.scoreSmoother.reset()
                 self.readinessGate.reset()
+                self.regionGate.reset()
                 self.updateHold(overall: nil, readiness: nil)
             }
             return
@@ -138,21 +145,23 @@ final class CameraViewModel: NSObject, ObservableObject {
                 if let target = self.targetPose,
                    let result = PoseScorer.score(reference: target.poseVector, live: kitPose) {
                     let display = self.scoreSmoother.smooth(result.overall)
-                    let worstLimb = LimbSimilarity.worstBone(reference: target.poseVector,
-                                                             live: kitPose)?.score ?? 0
-                    let raw = PoseReadiness.from(overall: display, worstLimb: worstLimb)
+                    let raw = PoseReadiness.from(overall: display, worstLimb: result.worstLimb)
                     self.readiness = self.readinessGate.update(raw)
+                    self.offRegions = self.regionGate.update(result.offRegions)
                     self.hintText = result.hint
                     self.updateHold(overall: display, readiness: self.readiness)
                 } else {
                     self.readiness = nil
+                    self.offRegions = []
                     self.hintText = nil
                     self.scoreSmoother.reset()
                     self.readinessGate.reset()
+                    self.regionGate.reset()
                     self.updateHold(overall: nil, readiness: nil)
                 }
             case .guideMe:
                 self.readiness = nil
+                self.offRegions = []
                 self.hintText = PostureHeuristics.hints(for: kitPose).first?.message
             }
         }

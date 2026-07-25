@@ -134,6 +134,14 @@ One-time setup, all doable from a browser:
 5. **Run**: repo → Actions → TestFlight → Run workflow. `CFBundleVersion` is
    the run number, so every run is a new TestFlight build; bump the
    `marketing_version` input when the user-facing version changes.
+
+   If the archive fails with **"Your team has no devices from which to generate
+   a provisioning profile"**, the build is asking Apple for a *development*
+   profile instead of a distribution one. Development profiles require a
+   registered device; App Store distribution profiles do not. The fix is
+   `CODE_SIGN_IDENTITY[sdk=iphoneos*]: "Apple Distribution"` on the Release
+   config in `project.yml` — already set. Do **not** work around it by
+   registering a device; that treats the symptom.
 6. **Install**: App Store Connect → TestFlight → add yourself as an internal
    tester, then install via the TestFlight app on the iPhone.
 

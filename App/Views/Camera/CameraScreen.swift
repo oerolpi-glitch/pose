@@ -115,6 +115,7 @@ struct CameraScreen: View {
                     .themedHUD(Circle())
             }
             .buttonStyle(.pressable)
+            .accessibilityLabel("close camera")
 
             Spacer()
 
@@ -133,6 +134,11 @@ struct CameraScreen: View {
                                 : AnyShapeStyle(.ultraThinMaterial), in: Capsule())
                     .overlay(Capsule().strokeBorder(Theme.Colors.hairline, lineWidth: 1))
                     .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                    // Label/value rather than a bare word: "hold" alone gives a
+                    // VoiceOver user no idea what is being reported.
+                    .accessibilityLabel("pose readiness")
+                    .accessibilityValue(readiness.label)
+                    .accessibilityAddTraits(.updatesFrequently)
             }
 
             Spacer()
@@ -153,6 +159,11 @@ struct CameraScreen: View {
                             .overlay(Capsule().strokeBorder(Theme.Colors.hairline, lineWidth: 1))
                     }
                     .buttonStyle(.pressable)
+                    // "auto" on its own says nothing about what it automates,
+                    // and the on/off state is carried only by the gold fill.
+                    .accessibilityLabel("hands-free capture")
+                    .accessibilityValue(viewModel.handsFree ? "on" : "off")
+                    .accessibilityHint("takes the photo once you hold the pose")
                 }
 
                 Button {
@@ -165,6 +176,8 @@ struct CameraScreen: View {
                         .themedHUD(Circle())
                 }
                 .buttonStyle(.pressable)
+                .accessibilityLabel("switch camera")
+                .accessibilityValue(viewModel.isFront ? "front" : "rear")
             }
         }
         .animation(Theme.Motion.spring, value: viewModel.readiness)
@@ -189,6 +202,8 @@ struct CameraScreen: View {
         .padding(Theme.Spacing.xl)
         .themedHUD(RoundedRectangle(cornerRadius: Theme.Radius.card))
         .allowsHitTesting(false)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isStaticText)
     }
 
     private var bottomHUD: some View {
@@ -203,6 +218,9 @@ struct CameraScreen: View {
                         .themedHUD(Capsule())
                         .id(hint)
                         .transition(.opacity.combined(with: .move(edge: .bottom)))
+                        // Coaching text changes as the user moves; the trait
+                        // tells VoiceOver to re-read rather than cache it.
+                        .accessibilityAddTraits(.updatesFrequently)
                 }
             }
             .animation(Theme.Motion.spring, value: displayHint)
@@ -228,6 +246,9 @@ struct CameraScreen: View {
                         .frame(width: 64, height: 64)
                 }
                 .buttonStyle(.shutter)
+                // A filled Circle carries no text, so without this the app's
+                // primary control announces nothing at all.
+                .accessibilityLabel("take photo")
             }
         }
     }

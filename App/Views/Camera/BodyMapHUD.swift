@@ -49,6 +49,7 @@ struct BodyMapHUD: View {
         .allowsHitTesting(false)
         .accessibilityElement()
         .accessibilityLabel(accessibilityText)
+        .accessibilityAddTraits(.updatesFrequently)
     }
 
     private var accessibilityText: String {

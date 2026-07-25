@@ -4,6 +4,7 @@ import PoseKit
 
 struct HomeView: View {
     @State private var path = NavigationPath()
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     /// Rotates through the library once per day — the home screen becomes an
     /// editorial cover that changes daily instead of a static menu.
@@ -25,7 +26,7 @@ struct HomeView: View {
         NavigationStack(path: $path) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    Text("pose")
+                    Text("poseview")
                         .font(Theme.Typography.eyebrow)
                         .themedEyebrow()
                         .foregroundStyle(Theme.Colors.accent)
@@ -45,8 +46,7 @@ struct HomeView: View {
                         .padding(.top, Theme.Spacing.l)
                     }
 
-                    LazyVGrid(columns: [GridItem(.flexible(), spacing: Theme.Spacing.m),
-                                        GridItem(.flexible(), spacing: Theme.Spacing.m)],
+                    LazyVGrid(columns: Theme.poseGridColumns(for: dynamicTypeSize),
                               spacing: Theme.Spacing.m) {
                         ForEach(IntentCollection.allCases) { collection in
                             CollectionCard(collection: collection) {
@@ -131,6 +131,12 @@ private struct CollectionCard: View {
         }
         .buttonStyle(.pressable)
         .disabled(collection.comingSoon)
+        // "coming soon" is otherwise carried by dimming plus a caption the
+        // combined element may not reach — state belongs in the value.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(collection.title)
+        .accessibilityValue(collection.comingSoon ? "coming soon" : collection.subtitle)
+        .accessibilityAddTraits(.isButton)
     }
 }
 
@@ -179,6 +185,10 @@ private struct DailyPoseCard: View {
                 .themedCardShadow()
             }
             .buttonStyle(.pressable)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("pose of the day, \(pose.title)")
+            .accessibilityHint("starts the camera on this pose")
+            .accessibilityAddTraits(.isButton)
         }
     }
 }

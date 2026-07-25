@@ -9,6 +9,7 @@ struct SearchField: View {
             Image(systemName: "magnifyingglass")
                 .font(Theme.Icon.inline())
                 .foregroundStyle(Theme.Colors.secondary)
+                .accessibilityHidden(true) // decorative; the field carries the label
             TextField(placeholder, text: $text)
                 .font(Theme.Typography.body)
                 .foregroundStyle(Theme.Colors.foreground)

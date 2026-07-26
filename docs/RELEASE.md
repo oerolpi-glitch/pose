@@ -135,13 +135,25 @@ One-time setup, all doable from a browser:
    the run number, so every run is a new TestFlight build; bump the
    `marketing_version` input when the user-facing version changes.
 
-   If the archive fails with **"Your team has no devices from which to generate
-   a provisioning profile"**, the build is asking Apple for a *development*
-   profile instead of a distribution one. Development profiles require a
-   registered device; App Store distribution profiles do not. The fix is
-   `CODE_SIGN_IDENTITY[sdk=iphoneos*]: "Apple Distribution"` on the Release
-   config in `project.yml` — already set. Do **not** work around it by
-   registering a device; that treats the symptom.
+   **Signing, and two dead ends.** Under automatic signing xcodebuild signs the
+   *archive* for development and only applies distribution signing at export.
+   With no registered devices, that means:
+   - Archiving with automatic signing fails: *"Your team has no devices from
+     which to generate a provisioning profile."*
+   - Pinning `CODE_SIGN_IDENTITY = Apple Distribution` to dodge it fails
+     differently: *"conflicting provisioning settings ... automatically signed
+     for development, but a conflicting code signing identity Apple
+     Distribution has been manually specified."*
+
+   So `release.yml` archives with `CODE_SIGNING_ALLOWED=NO` and lets
+   `-exportArchive` do all the signing via the API key. Distribution profiles
+   are not device-bound, so it needs no devices. This is only safe while the
+   app declares **no entitlements and no capabilities** — if you add Push,
+   Sign in with Apple, App Groups, or similar, the unsigned archive will no
+   longer carry what export needs and the signing strategy must be revisited.
+
+   Do **not** "fix" a signing failure by registering a device UDID. It masks a
+   distribution-signing problem with a development-signing workaround.
 6. **Install**: App Store Connect → TestFlight → add yourself as an internal
    tester, then install via the TestFlight app on the iPhone.
 

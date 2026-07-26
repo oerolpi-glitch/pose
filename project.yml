@@ -36,18 +36,11 @@ targets:
         CODE_SIGN_STYLE: Automatic
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
-      configs:
-        # Without this, automatic signing defaults CODE_SIGN_IDENTITY to
-        # "Apple Development" and `xcodebuild archive` asks Apple for a
-        # DEVELOPMENT profile — which requires a registered device and fails on
-        # CI with "Your team has no devices from which to generate a
-        # provisioning profile". App Store distribution profiles need no
-        # devices, so naming the identity is what routes -allowProvisioningUpdates
-        # to the right kind of profile.
-        # Scoped to iphoneos so simulator test builds (ci.yml, unsigned) are
-        # unaffected.
-        Release:
-          "CODE_SIGN_IDENTITY[sdk=iphoneos*]": "Apple Distribution"
+        # No CODE_SIGN_IDENTITY here on purpose. Pinning "Apple Distribution"
+        # for Release fails with "conflicting provisioning settings" — under
+        # automatic signing Xcode signs the *archive* for development and only
+        # applies distribution signing at export. release.yml therefore archives
+        # unsigned and lets -exportArchive do all the signing.
     scheme:
       testTargets:
         - PoseTests

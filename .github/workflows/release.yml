@@ -46,18 +46,29 @@ jobs:
           mkdir -p "$HOME/private_keys"
           printf '%s' "$ASC_PRIVATE_KEY" > "$HOME/private_keys/AuthKey_$ASC_KEY_ID.p8"
 
-      - name: Archive (Release, cloud signing)
+      # Archive UNSIGNED, then let -exportArchive do all the signing.
+      #
+      # Under automatic signing, xcodebuild signs the archive itself for
+      # *development*, and development profiles are device-bound — on a team
+      # with no registered devices the archive fails outright with "Your team
+      # has no devices from which to generate a provisioning profile".
+      # Forcing CODE_SIGN_IDENTITY=Apple Distribution instead trades that for
+      # "conflicting provisioning settings", because automatic signing will not
+      # accept a manually pinned identity.
+      #
+      # Skipping signing here sidesteps both: the export step below creates the
+      # App Store distribution profile via the API key, and distribution
+      # profiles need no devices. Safe because the app declares no entitlements
+      # and no capabilities — there is nothing for the archive to carry.
+      - name: Archive (Release, unsigned)
         run: |
           set -o pipefail
           xcodebuild archive \
             -project Pose.xcodeproj -scheme Pose -configuration Release \
             -destination 'generic/platform=iOS' \
             -archivePath build/Pose.xcarchive \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath "$HOME/private_keys/AuthKey_$ASC_KEY_ID.p8" \
-            -authenticationKeyID "$ASC_KEY_ID" \
-            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
-            CODE_SIGN_STYLE=Automatic \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
             DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
             MARKETING_VERSION="$MARKETING_VERSION" \
             CURRENT_PROJECT_VERSION="${{ github.run_number }}" | tail -200
@@ -74,6 +85,7 @@ jobs:
             <key>destination</key><string>upload</string>
             <key>teamID</key><string>$APPLE_TEAM_ID</string>
             <key>uploadSymbols</key><true/>
+            <key>signingStyle</key><string>automatic</string>
           </dict>
           </plist>
           PLIST

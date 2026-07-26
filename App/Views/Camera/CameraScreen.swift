@@ -32,26 +32,25 @@ struct CameraScreen: View {
                         // Photogenik-style guide: dim the feed, then the ivory
                         // mannequin (brightness-keyed to alpha) glows over it.
                         Theme.Colors.scrim.opacity(0.65).ignoresSafeArea()
-                        if target.isCloseUp {
-                            // Selfie and portrait crops fill the frame. Fitting
-                            // a chest-up mannequin into a tall phone screen
-                            // shrinks the head to a fraction of its size, so a
-                            // user shooting at arm's length runs out of arm
-                            // before they can match it.
-                            Image(uiImage: ghost)
-                                .resizable()
-                                .scaledToFill()
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                .ignoresSafeArea()
-                                .clipped()
-                                .allowsHitTesting(false)
-                        } else {
-                            Image(uiImage: ghost)
-                                .resizable()
-                                .scaledToFit()
-                                .padding(Theme.Spacing.xl)
-                                .allowsHitTesting(false)
-                        }
+                        // The guide fills the screen so the figure is the size a
+                        // real body is at shooting distance — fitting the whole
+                        // 2:3 frame left it at ~58% of screen height, which no
+                        // amount of stepping back can match.
+                        //
+                        // Sized by `Color.clear`, NOT by the image: `scaledToFill`
+                        // overflows horizontally, and an overflowing image inside
+                        // the ZStack grows the stack and pushes the controls off
+                        // screen. Anchoring layout to a zero-content view and
+                        // overlaying the image keeps the crop purely visual.
+                        Color.clear
+                            .overlay {
+                                Image(uiImage: ghost)
+                                    .resizable()
+                                    .scaledToFill()
+                            }
+                            .clipped()
+                            .ignoresSafeArea()
+                            .allowsHitTesting(false)
                     } else {
                         // Fallback until a mannequin ghost is bundled: a filled
                         // silhouette. The score is pose-invariant, so the user
@@ -60,6 +59,22 @@ struct CameraScreen: View {
                             .ignoresSafeArea()
                     }
                 }
+
+                // Control scrims. The guide now fills the screen, so the HUD
+                // needs its own ground — otherwise a bright shoulder or the
+                // mannequin's head lands directly behind a control and the
+                // chrome stops reading. Apple's own Camera does the same.
+                VStack(spacing: 0) {
+                    LinearGradient(colors: [Theme.Colors.background.opacity(0.72), .clear],
+                                   startPoint: .top, endPoint: .bottom)
+                        .frame(height: 160)
+                    Spacer(minLength: 0)
+                    LinearGradient(colors: [.clear, Theme.Colors.background.opacity(0.88)],
+                                   startPoint: .top, endPoint: .bottom)
+                        .frame(height: 220)
+                }
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
 
                 if isSearchingForBody {
                     searchingForBodyView

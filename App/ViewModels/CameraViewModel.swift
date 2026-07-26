@@ -28,6 +28,10 @@ final class CameraViewModel: NSObject, ObservableObject {
     private let poseSmoother = PoseSmoother()
     private var scoreSmoother = ScoreSmoother()
     private var readinessGate = ReadinessGate()
+    private let speech = SpeechCoach()
+    /// Last readiness spoken aloud, so voice tracks committed state changes
+    /// rather than every frame.
+    private var spokenReadiness: PoseReadiness?
     private let detectionQueue = DispatchQueue(label: "pose.detection", qos: .userInitiated)
     private var viewSize: CGSize = .zero
     private var holdStart: Date?
@@ -73,6 +77,7 @@ final class CameraViewModel: NSObject, ObservableObject {
     }
 
     func stop() {
+        speech.stop()
         camera.stop()
         if let o = thermalObserver { NotificationCenter.default.removeObserver(o) }
         previewDismissTask?.cancel()
@@ -143,6 +148,7 @@ final class CameraViewModel: NSObject, ObservableObject {
                     let raw = PoseReadiness.from(overall: display, worstLimb: worstLimb)
                     self.readiness = self.readinessGate.update(raw)
                     self.hintText = result.hint
+                    self.speakCoaching(readiness: self.readiness, hint: result.hint)
                     self.updateHold(overall: display, readiness: self.readiness)
                 } else {
                     self.readiness = nil
@@ -156,6 +162,21 @@ final class CameraViewModel: NSObject, ObservableObject {
                 self.hintText = PostureHeuristics.hints(for: kitPose).first?.message
             }
         }
+    }
+
+    /// Voice coaching, active only in hands-free — the mode where the phone is
+    /// propped up and the screen cannot be read. Announces `hold` the moment it
+    /// is reached (urgent: missing it means missing the shot) and otherwise
+    /// reads the limb hint, which `SpeechCoach` throttles into speech a person
+    /// can actually act on.
+    private func speakCoaching(readiness: PoseReadiness?, hint: String?) {
+        guard handsFree, capturedImage == nil else { return }
+        if readiness == .hold, spokenReadiness != .hold {
+            speech.say("hold", urgent: true)
+        } else if readiness != .hold, let hint {
+            speech.say(hint)
+        }
+        spokenReadiness = readiness
     }
 
     private func updateHold(overall: Float?, readiness: PoseReadiness?) {
@@ -177,6 +198,9 @@ final class CameraViewModel: NSObject, ObservableObject {
                 autoCaptureProgress = 0
                 armed = false // no re-fire until the pose breaks and re-arms
                 UINotificationFeedbackGenerator().notificationOccurred(.success)
+                // Audible confirmation: across the room the shutter animation
+                // and the haptic both go unnoticed.
+                speech.say("got it", urgent: true)
                 capture()
             }
         } else {

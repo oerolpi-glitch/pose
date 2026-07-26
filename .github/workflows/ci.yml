@@ -6,7 +6,7 @@ on:
 
 jobs:
   posekit:
-    runs-on: macos-15
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
       - name: PoseKit tests
@@ -25,9 +25,18 @@ jobs:
       - name: Kotlin PoseKit tests + Android app tests + build
         run: gradle -p android :posekit:test :app:testDebugUnitTest :app:assembleDebug
   app:
-    runs-on: macos-15
+    # Matches release.yml: build against the same toolchain that ships, so an
+    # SDK-related compile break surfaces on a PR rather than at upload.
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
+      - name: Select newest Xcode
+        run: |
+          set -euo pipefail
+          NEWEST=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
+          sudo xcode-select -s "$NEWEST/Contents/Developer"
+          echo "DEVELOPER_DIR=$NEWEST/Contents/Developer" >> "$GITHUB_ENV"
+          xcodebuild -version
       - name: Install XcodeGen
         run: brew install xcodegen
       - name: Generate project
@@ -36,6 +45,11 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
+          # Pick whatever iPhone simulator this Xcode actually ships rather than
+          # pinning a model name that a future runner image may drop.
+          DEVICE=$(xcrun simctl list devices available \
+            | grep -oE 'iPhone [0-9]+( Pro)?( Max)?' | sort -V | tail -1)
+          echo "Simulator: $DEVICE"
           xcodebuild test -project Pose.xcodeproj -scheme Pose \
-            -destination 'platform=iOS Simulator,name=iPhone 16' \
+            -destination "platform=iOS Simulator,name=$DEVICE" \
             CODE_SIGNING_ALLOWED=NO | tail -300

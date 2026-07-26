@@ -15,7 +15,9 @@ on:
 
 jobs:
   upload:
-    runs-on: macos-15
+    # Xcode 26 (iOS 26 SDK) is the minimum App Store Connect accepts; an iOS
+    # 18.5 build is rejected at upload validation, after a full archive.
+    runs-on: macos-26
     env:
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
       ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
@@ -32,6 +34,25 @@ jobs:
           done
           if [ -z "${{ secrets.ASC_PRIVATE_KEY }}" ]; then echo "::error::Missing secret ASC_PRIVATE_KEY"; missing=1; fi
           exit $missing
+
+      # Runner images ship several Xcodes and the default is not always the
+      # newest. Pick the highest available and fail here rather than after a
+      # full archive: Apple rejects anything below the iOS 26 SDK at upload
+      # validation, which is ~10 minutes of build time to discover.
+      - name: Select newest Xcode
+        run: |
+          set -euo pipefail
+          ls -d /Applications/Xcode*.app
+          NEWEST=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
+          sudo xcode-select -s "$NEWEST/Contents/Developer"
+          echo "DEVELOPER_DIR=$NEWEST/Contents/Developer" >> "$GITHUB_ENV"
+          xcodebuild -version
+          SDK=$(xcrun --sdk iphoneos --show-sdk-version)
+          echo "iOS SDK: $SDK"
+          if [ "${SDK%%.*}" -lt 26 ]; then
+            echo "::error::iOS SDK $SDK is below the iOS 26 minimum App Store Connect requires. Xcodes on this runner are listed above."
+            exit 1
+          fi
 
       - name: Install XcodeGen
         run: brew install xcodegen

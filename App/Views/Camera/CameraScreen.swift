@@ -32,11 +32,26 @@ struct CameraScreen: View {
                         // Photogenik-style guide: dim the feed, then the ivory
                         // mannequin (brightness-keyed to alpha) glows over it.
                         Theme.Colors.scrim.opacity(0.65).ignoresSafeArea()
-                        Image(uiImage: ghost)
-                            .resizable()
-                            .scaledToFit()
-                            .padding(Theme.Spacing.xl)
-                            .allowsHitTesting(false)
+                        if target.isCloseUp {
+                            // Selfie and portrait crops fill the frame. Fitting
+                            // a chest-up mannequin into a tall phone screen
+                            // shrinks the head to a fraction of its size, so a
+                            // user shooting at arm's length runs out of arm
+                            // before they can match it.
+                            Image(uiImage: ghost)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .ignoresSafeArea()
+                                .clipped()
+                                .allowsHitTesting(false)
+                        } else {
+                            Image(uiImage: ghost)
+                                .resizable()
+                                .scaledToFit()
+                                .padding(Theme.Spacing.xl)
+                                .allowsHitTesting(false)
+                        }
                     } else {
                         // Fallback until a mannequin ghost is bundled: a filled
                         // silhouette. The score is pose-invariant, so the user

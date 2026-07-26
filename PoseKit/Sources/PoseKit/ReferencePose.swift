@@ -38,6 +38,23 @@ public struct ReferencePose: Codable, Identifiable, Equatable, Sendable {
         joints = try c.decode([String: [Float]].self, forKey: .joints)
     }
 
+    /// True when the pose is framed chest-up — a selfie or portrait crop rather
+    /// than a full-length shot.
+    ///
+    /// Derived from the joints rather than `tags` deliberately: the joints are
+    /// what the scorer grades, so framing the guide from them keeps the picture
+    /// and the scoring in agreement. Tags drift — `peace-selfie` was tagged
+    /// close-up while carrying full-body joints, and the ghost art exposed it.
+    ///
+    /// The camera uses this to fill the frame with a close-up guide instead of
+    /// fitting the whole image. Fitting a chest-up mannequin into a tall phone
+    /// screen shrinks the head to a fraction of its size, so a user shooting a
+    /// selfie at arm's length can never match it — they run out of arm first.
+    public var isCloseUp: Bool {
+        let lower: Set<Joint> = [.leftKnee, .rightKnee, .leftAnkle, .rightAnkle]
+        return poseVector.points.keys.allSatisfy { !lower.contains($0) }
+    }
+
     /// Typed pose. Unknown joint names and arrays without exactly 2 values are skipped.
     public var poseVector: PoseVector {
         var pts: [Joint: SIMD2<Float>] = [:]

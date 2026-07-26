@@ -17,6 +17,24 @@ final class CameraViewModel: NSObject, ObservableObject {
     /// the user opts in, because pose-match confidence isn't yet good enough to
     /// fire unattended without occasional false positives.
     @Published var handsFree = false
+    /// Live scoring readout, off by default. Triple-tapping the readiness chip
+    /// reveals it. The thresholds that gate auto-capture were chosen before the
+    /// app had ever run on hardware; this exists so they can be calibrated
+    /// against real numbers instead of guessed at a second time.
+    @Published var showsDiagnostics = false
+    @Published var diagnostics: ScoreDiagnostics?
+
+    struct ScoreDiagnostics: Equatable {
+        let overall: Float
+        let procrustes: Float
+        let limbMean: Float
+        let worstLimb: Float
+        let worstName: String
+        /// True when this frame satisfies each half of the `hold` gate, so it is
+        /// visible which term is blocking capture.
+        var passesOverall: Bool { overall >= ReadinessThresholds.holdOverall }
+        var passesWorstLimb: Bool { worstLimb >= ReadinessThresholds.holdWorstLimb }
+    }
 
     let mode: ShootingMode
     let targetPose: ReferencePose?
@@ -148,6 +166,13 @@ final class CameraViewModel: NSObject, ObservableObject {
                     let raw = PoseReadiness.from(overall: display, worstLimb: worstLimb)
                     self.readiness = self.readinessGate.update(raw)
                     self.hintText = result.hint
+                    self.diagnostics = ScoreDiagnostics(
+                        overall: display,
+                        procrustes: result.procrustes,
+                        limbMean: result.limbMean,
+                        worstLimb: worstLimb,
+                        worstName: result.worstBone?.coachingName ?? "—"
+                    )
                     self.speakCoaching(readiness: self.readiness, hint: result.hint)
                     self.updateHold(overall: display, readiness: self.readiness)
                 } else {

@@ -21,6 +21,14 @@ struct CameraScreen: View {
         !viewModel.permissionDenied && !viewModel.bodyDetected && viewModel.capturedImage == nil
     }
 
+    /// The body map only makes sense against a target pose, with a body to
+    /// compare. In `guideMe` there is nothing to be off from.
+    private var showsBodyMap: Bool {
+        viewModel.mode == .poseMe && viewModel.targetPose != nil
+            && viewModel.bodyDetected && !viewModel.permissionDenied
+            && viewModel.capturedImage == nil
+    }
+
     var body: some View {
         GeometryReader { geo in
             ZStack {
@@ -51,6 +59,19 @@ struct CameraScreen: View {
                         .transition(.opacity.combined(with: .scale(scale: 0.96)))
                 }
 
+                if showsBodyMap {
+                    // Leading edge, vertically centred — an instrument readout,
+                    // like a level or histogram. Keeps clear of the top controls
+                    // and the shutter, and never covers the centred ghost.
+                    HStack {
+                        BodyMapHUD(offRegions: viewModel.offRegions,
+                                   isMirrored: viewModel.isFront)
+                        Spacer()
+                    }
+                    .padding(.horizontal, Theme.Spacing.l)
+                    .transition(.opacity.combined(with: .move(edge: .leading)))
+                }
+
                 VStack {
                     topBar
                     Spacer()
@@ -69,6 +90,7 @@ struct CameraScreen: View {
                 }
             }
             .animation(Theme.Motion.spring, value: isSearchingForBody)
+            .animation(Theme.Motion.spring, value: showsBodyMap)
             .task {
                 await viewModel.start(viewSize: geo.size)
             }

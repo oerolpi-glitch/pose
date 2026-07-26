@@ -991,17 +991,27 @@ The core coaching signal is currently untrustworthy, and that undermines every f
 
 **Blocker this creates, and its resolution:** the ghost JPGs are AI-generated art with no joint registration — the app cannot know where "the ghost's left elbow" is in the image. Resolved by Stage 2 below, which snaps the ghost onto the detected body using `SimilarityTransform` (already in PoseKit, tested, currently **unused** — its doc comment states it was built precisely so "the reference pose can be drawn ON the detected body"). Once aligned, the ghost-vs-body distinction dissolves: a limb marker sits on the ghost's limb *and* over the user's limb at once.
 
-### Stage 0 — Replace the lying number (do first; prerequisite for everything above it)
+### Stage 0 — Replace the lying number — **SHIPPED (iOS, 2026-07-22)**
 - **Scope:** delete the `%` readout. Replace with a 3-state chip: `adjust` / `almost` / `hold`. Word + muted tint, **never colour-only** (red/green is the most common colour-blindness axis, ~8% of men; and traffic-light hues fight Noir Editorial — champagne gold is already the attention colour). Surface the directed hint that already works today (`PoseScore.hint` / `worstBone.coachingName` yields "left arm").
 - **Threshold unification (mandatory):** one shared constant drives the chip, the markers, and auto-capture. If the chip reads `hold` but the shutter won't fire, the credibility bug is simply rebuilt somewhere new. `CameraViewModel.autoCaptureWorstLimb` (0.8) is the existing value.
 - **Hysteresis:** state must persist several frames before flipping, or it strobes. `PoseSmoother` smooths joint positions, not derived state.
 - **Files:** `PoseScorer`/`PoseScore` (both platforms), `CameraScreen` + `CameraViewModel` (both).
 - **Acceptance:** no numeric score anywhere in the camera; chip state and auto-capture never disagree; state does not visibly flicker while holding still; both platforms.
 
-### Stage 1 — Per-limb truth (no art work, no registration)
+### Stage 1 — Per-limb truth (no art work, no registration) — **SHIPPED (iOS, 2026-07-25)**
 - **Scope:** `PoseScore` keeps only `worstBone` and discards the other nine bone scores — expose the full `LimbSimilarity.boneScores` map. Collapse 10 bones into the 6 regions `Bone.coachingName` already defines (left arm, right arm, left leg, right leg, torso, head). Render region state in a compact HUD body-map (small stylised figure, 6 zones) — legible at any subject size, needs no image registration, does not touch the beauty layer.
 - **Show only what's wrong.** Silence means correct. Marking every region reads as a debug overlay; marking the one arm that's off reads as intelligence.
 - **Acceptance:** the user can identify which body region is wrong without reading text; correct regions are unmarked; both platforms.
+
+**As built.** `BodyRegion` (6 cases) owns the user-facing limb name; `Bone.coachingName` now derives from it, so the hint sentence and the map cannot name a limb differently. A region scores as its **worst** bone, never its mean — a reversed forearm must not be averaged away by a correct upper arm. Regions whose bones are all missing are omitted rather than scored zero, so a limb out of frame reads as unknown, not wrong.
+
+The off-threshold is `ReadinessThresholds.holdWorstLimb` reused verbatim, not a new number: a region is marked exactly when it is one of the limbs holding `hold` back. That makes "chip reads `hold` while a limb is marked" unrepresentable, which is the Stage 0 credibility bug rebuilt one layer up. Pinned by `testHoldImpliesNoMarkedRegions` and `testOffThresholdIsTheHoldWorstLimbThreshold`.
+
+Two things the spec did not call out but that the build needed:
+- **`RegionGate`** — per-region hysteresis. Stage 0 needed debouncing for the chip and the same failure mode applies here: a score resting on the threshold strobes a marker on and off every frame. `testAlternatingFramesNeverCommit` pins it.
+- **Mirroring.** The map matches the preview's handedness (`isMirrored`), so a marked limb sits on the same side of the screen as the limb the user sees. Same rule as the front-camera mirroring requirement in `RELEASE.md`. **Unverified on device** — this is the item most likely to be backwards, and it is checkable in seconds: raise the arm the map marks.
+
+State is carried by stroke weight and brightness, never hue — it reads in greyscale, and gold stays reserved for `hold` so the two signals never compete. `PoseScorer` now makes one pass over the bones for mean, worst, and regions where the camera loop previously made two, cutting a full per-frame bone pass.
 
 ### Stage 2 — Ghost anchors + aligned ghost (the differentiator)
 - **Scope:** add `ghostAnchors` to each pose JSON — normalised image coordinates for left/right shoulder and hip (4 points × 10 poses, eyeballed once, same manual pipeline as the photos). Compose that image↔pose registration with `SimilarityTransform.mapping(reference:live:)` to draw the mannequin snapped onto the user's body at their position, scale and rotation. Per-limb markers then land exactly, replacing Stage 1's body-map.

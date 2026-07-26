@@ -4,7 +4,18 @@ public struct PoseScore: Equatable, Sendable {
     public let procrustes: Float   // 0...1, global shape
     public let limbMean: Float     // 0...1, mean per-bone direction match
     public let worstBone: Bone?
+    /// Score of `worstBone`. Carried here so callers gating on the worst limb
+    /// (readiness, auto-capture) don't run a second pass over every bone.
+    public let worstLimb: Float
+    /// Per-region worst-bone scores — the body map's data.
+    public let regions: [BodyRegion: Float]
     public let hint: String?
+
+    /// Regions the map marks. Empty whenever readiness is `.hold`, since both
+    /// gate on the same worst-limb threshold.
+    public var offRegions: Set<BodyRegion> {
+        Set(regions.filter { $0.value < LimbSimilarity.regionOffThreshold }.keys)
+    }
 }
 
 public enum PoseScorer {
@@ -16,8 +27,18 @@ public enum PoseScorer {
         guard let proc = ProcrustesAnalyzer.similarity(reference: reference, live: live) else {
             return nil
         }
-        let limbMean = LimbSimilarity.meanScore(reference: reference, live: live) ?? proc
-        let worst = LimbSimilarity.worstBone(reference: reference, live: live)
+        // One pass over the bones feeds the mean, the worst limb, and the
+        // region map — the caller used to recompute the worst limb per frame.
+        let bones = LimbSimilarity.boneScores(reference: reference, live: live)
+        let limbMean = bones.isEmpty ? proc : bones.values.reduce(0, +) / Float(bones.count)
+        let worst = bones.min { $0.value < $1.value }.map { (bone: $0.key, score: $0.value) }
+
+        var regions: [BodyRegion: Float] = [:]
+        for (bone, score) in bones {
+            let region = bone.region
+            regions[region] = min(regions[region] ?? score, score)
+        }
+
         let overall = procrustesWeight * proc + limbWeight * limbMean
 
         var hint: String?
@@ -25,6 +46,7 @@ public enum PoseScorer {
             hint = "adjust your \(w.bone.coachingName)"
         }
         return PoseScore(overall: overall, procrustes: proc, limbMean: limbMean,
-                         worstBone: worst?.bone, hint: hint)
+                         worstBone: worst?.bone, worstLimb: worst?.score ?? 0,
+                         regions: regions, hint: hint)
     }
 }

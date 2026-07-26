@@ -123,9 +123,16 @@ One-time setup, all doable from a browser:
    bundle ID `com.oerol.pose` (register the bundle ID when prompted), any SKU.
    The upload fails without an existing app record.
 3. **API key**: App Store Connect → Users and Access → Integrations →
-   App Store Connect API → Team Keys → **+**. Role: **App Manager**. Download
-   the `.p8` once (it cannot be re-downloaded) and note the Key ID and the
-   Issuer ID shown at the top of the page.
+   App Store Connect API → Team Keys → **+**. Role: **Admin** — *not* App
+   Manager. App Manager can manage apps and TestFlight but has no access to
+   Certificates, Identifiers & Profiles, so cloud signing fails at export with
+   an HTTP 403 whose detail reads *"You haven't been given access to
+   cloud-managed distribution certificates."* A key's role cannot be changed
+   after creation; getting this wrong means generating a new key.
+   Download the `.p8` once (it cannot be re-downloaded) and note the Key ID and
+   the Issuer ID shown at the top of the page. The Issuer ID is per-team, so it
+   stays the same if you regenerate the key — only `ASC_KEY_ID` and
+   `ASC_PRIVATE_KEY` change.
 4. **GitHub secrets** (repo → Settings → Secrets and variables → Actions):
    - `ASC_KEY_ID` — the key's ID
    - `ASC_ISSUER_ID` — the issuer ID

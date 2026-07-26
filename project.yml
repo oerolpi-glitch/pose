@@ -36,6 +36,11 @@ targets:
         CODE_SIGN_STYLE: Automatic
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        # No CODE_SIGN_IDENTITY here on purpose. Pinning "Apple Distribution"
+        # for Release fails with "conflicting provisioning settings" — under
+        # automatic signing Xcode signs the *archive* for development and only
+        # applies distribution signing at export. release.yml therefore archives
+        # unsigned and lets -exportArchive do all the signing.
     scheme:
       testTargets:
         - PoseTests

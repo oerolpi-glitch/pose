@@ -46,21 +46,48 @@ jobs:
           mkdir -p "$HOME/private_keys"
           printf '%s' "$ASC_PRIVATE_KEY" > "$HOME/private_keys/AuthKey_$ASC_KEY_ID.p8"
 
-      - name: Archive (Release, cloud signing)
+      # Archive UNSIGNED, then let -exportArchive do all the signing.
+      #
+      # Under automatic signing, xcodebuild signs the archive itself for
+      # *development*, and development profiles are device-bound — on a team
+      # with no registered devices the archive fails outright with "Your team
+      # has no devices from which to generate a provisioning profile".
+      # Forcing CODE_SIGN_IDENTITY=Apple Distribution instead trades that for
+      # "conflicting provisioning settings", because automatic signing will not
+      # accept a manually pinned identity.
+      #
+      # Skipping signing here sidesteps both: the export step below creates the
+      # App Store distribution profile via the API key, and distribution
+      # profiles need no devices. Safe because the app declares no entitlements
+      # and no capabilities — there is nothing for the archive to carry.
+      - name: Archive (Release, unsigned)
         run: |
           set -o pipefail
           xcodebuild archive \
             -project Pose.xcodeproj -scheme Pose -configuration Release \
             -destination 'generic/platform=iOS' \
             -archivePath build/Pose.xcarchive \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath "$HOME/private_keys/AuthKey_$ASC_KEY_ID.p8" \
-            -authenticationKeyID "$ASC_KEY_ID" \
-            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
-            CODE_SIGN_STYLE=Automatic \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
             DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
             MARKETING_VERSION="$MARKETING_VERSION" \
-            CURRENT_PROJECT_VERSION="${{ github.run_number }}" | tail -200
+            CURRENT_PROJECT_VERSION="${{ github.run_number }}"
+
+      # Runs even when the archive fails, so a failure is diagnosable from one
+      # run instead of needing another to gather evidence. Both signing dead
+      # ends above cost a round trip each because the logs were tailed.
+      - name: Inspect archive
+        if: always()
+        run: |
+          echo "--- build/ ---"
+          ls -la build/ 2>&1 || echo "no build directory — archive produced nothing"
+          echo "--- archive contents ---"
+          ls -R build/Pose.xcarchive 2>&1 | head -40 || echo "no .xcarchive"
+          echo "--- Info.plist ---"
+          plutil -p build/Pose.xcarchive/Info.plist 2>&1 | head -30 || echo "no archive Info.plist"
+          echo "--- embedded provisioning profile (expected ABSENT: archive is unsigned) ---"
+          ls -la build/Pose.xcarchive/Products/Applications/*.app/embedded.mobileprovision 2>&1 \
+            || echo "none, as expected"
 
       - name: Upload to TestFlight
         run: |
@@ -74,6 +101,7 @@ jobs:
             <key>destination</key><string>upload</string>
             <key>teamID</key><string>$APPLE_TEAM_ID</string>
             <key>uploadSymbols</key><true/>
+            <key>signingStyle</key><string>automatic</string>
           </dict>
           </plist>
           PLIST
@@ -84,4 +112,17 @@ jobs:
             -allowProvisioningUpdates \
             -authenticationKeyPath "$HOME/private_keys/AuthKey_$ASC_KEY_ID.p8" \
             -authenticationKeyID "$ASC_KEY_ID" \
-            -authenticationKeyIssuerID "$ASC_ISSUER_ID" | tail -100
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+
+      # The export step writes its real diagnostics to a temp log and prints
+      # only a summary line on failure; without this the actual reason is lost.
+      - name: Export diagnostics on failure
+        if: failure()
+        run: |
+          echo "--- export logs ---"
+          find /var/folders "$HOME/Library/Logs" -name '*.log' -newermt '-30 minutes' 2>/dev/null \
+            | grep -iE 'export|xcodebuild|IDEDistribution' | head -10 | while read -r f; do
+              echo "===== $f ====="; tail -120 "$f"
+            done
+          echo "--- ExportOptions used ---"
+          cat build/ExportOptions.plist 2>&1

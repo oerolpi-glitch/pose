@@ -105,6 +105,9 @@ enum Theme {
         static let spring = Animation.spring(response: 0.35, dampingFraction: 0.8)
         static let pressedScale: CGFloat = 0.97
         static let pressedOpacity: CGFloat = 0.85
+        /// Delay between staggered siblings entering. Short enough to read as
+        /// one gesture rather than a queue — see `View.revealed(after:)`.
+        static let stagger: Double = 0.06
     }
 }
 

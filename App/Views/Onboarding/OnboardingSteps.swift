@@ -5,35 +5,67 @@ import SuperwallKit
 
 // MARK: - 1. Value proposition
 
+/// Opens on the photography, not on chrome. The library's editorial model set is
+/// the strongest thing this app owns, so the first screen is a full-bleed frame
+/// of it with the headline set over a gradient — the same treatment as the home
+/// cover card, so the app introduces itself in the language it then speaks.
+/// A drawn stick figure used to sit here, which undersold every photograph
+/// waiting one screen later.
 struct IntroStep: View {
     @EnvironmentObject private var viewModel: OnboardingViewModel
-    @State private var hasAppeared = false
+
+    private var cover: UIImage? { PoseImageProvider.image(for: "power-pose") }
 
     var body: some View {
-        VStack(spacing: Theme.Spacing.l) {
-            Spacer()
-            if let pose = PoseLibraryService().allPoses().first(where: { $0.id == "power-pose" }) {
-                MannequinView(pose: pose.poseVector)
-                    .frame(height: 280)
-                    .scaleEffect(hasAppeared ? 1 : 0.85)
-                    .opacity(hasAppeared ? 1 : 0)
+        ZStack(alignment: .bottomLeading) {
+            if let cover {
+                Image(uiImage: cover)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .ignoresSafeArea()
+                    .clipped()
+                    .overlay {
+                        // Two stops, not one: the upper stop lifts the type off
+                        // the model's shoulder, the lower grounds the button in
+                        // the page colour so the screen ends rather than stops.
+                        LinearGradient(
+                            stops: [
+                                .init(color: .clear, location: 0.30),
+                                .init(color: Theme.Colors.background.opacity(0.75), location: 0.62),
+                                .init(color: Theme.Colors.background, location: 0.90)
+                            ],
+                            startPoint: .top, endPoint: .bottom
+                        )
+                        .ignoresSafeArea()
+                    }
+            } else {
+                Theme.Colors.background.ignoresSafeArea()
             }
-            Text("never freeze in front of a camera again")
-                .font(Theme.Typography.screenTitle).themedDisplay()
-                .foregroundStyle(Theme.Colors.foreground)
-                .multilineTextAlignment(.center)
-            Text("real-time AI coaching that guides you into your best pose, every single shot")
-                .font(Theme.Typography.body)
-                .foregroundStyle(Theme.Colors.secondary)
-                .multilineTextAlignment(.center)
-            Spacer()
-            PillButton(title: "get started") { viewModel.advance() }
-        }
-        .padding(Theme.Spacing.xl)
-        .onAppear {
-            withAnimation(Theme.Motion.spring) {
-                hasAppeared = true
+
+            VStack(alignment: .leading, spacing: Theme.Spacing.m) {
+                Text("poseview")
+                    .font(Theme.Typography.eyebrow).themedEyebrow()
+                    .foregroundStyle(Theme.Colors.accent)
+                    .revealed(after: Theme.Motion.stagger)
+
+                Text("never freeze in front of a camera again")
+                    .font(Theme.Typography.screenTitle).themedDisplay()
+                    .foregroundStyle(Theme.Colors.foreground)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .revealed(after: Theme.Motion.stagger * 2)
+
+                Text("real-time coaching that guides you into your best pose, every shot")
+                    .font(Theme.Typography.body)
+                    .foregroundStyle(Theme.Colors.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .revealed(after: Theme.Motion.stagger * 3)
+
+                PillButton(title: "get started") { viewModel.advance() }
+                    .padding(.top, Theme.Spacing.s)
+                    .revealed(after: Theme.Motion.stagger * 4)
             }
+            .padding(Theme.Spacing.xl)
         }
     }
 }
@@ -129,21 +161,20 @@ struct AnalyzingStep: View {
     var body: some View {
         VStack(spacing: Theme.Spacing.xl) {
             Spacer()
+            // No percentage. The duration is a fixed 3.3s, so a counter would be
+            // reporting a number it invented — the same fake precision the
+            // camera's match score was removed for. A thin arc reads as "working"
+            // without claiming to measure anything.
             ZStack {
                 Circle()
-                    .stroke(Theme.Colors.surface, lineWidth: 10)
+                    .stroke(Theme.Colors.surface, lineWidth: 2)
                 Circle()
                     .trim(from: 0, to: progress)
                     .stroke(Theme.Colors.accent,
-                            style: StrokeStyle(lineWidth: 10, lineCap: .round))
+                            style: StrokeStyle(lineWidth: 2, lineCap: .round))
                     .rotationEffect(.degrees(-90))
-                Text("\(Int(progress * 100))%")
-                    .font(Theme.Typography.screenTitle).themedDisplay()
-                    .monospacedDigit()
-                    .foregroundStyle(Theme.Colors.foreground)
-                    .contentTransition(.numericText(value: progress * 100))
             }
-            .frame(width: 180, height: 180)
+            .frame(width: 132, height: 132)
 
             Text(messages[messageIndex])
                 .font(Theme.Typography.body)
@@ -187,8 +218,9 @@ struct SocialProofStep: View {
                     .font(Theme.Typography.stepTitle).themedDisplay()
                     .foregroundStyle(Theme.Colors.foreground)
                     .padding(.top, Theme.Spacing.xl)
+                    .revealed()
 
-                ForEach(reviews, id: \.0) { review in
+                ForEach(Array(reviews.enumerated()), id: \.element.0) { index, review in
                     VStack(alignment: .leading, spacing: Theme.Spacing.s) {
                         HStack(spacing: 2) {
                             ForEach(0..<5, id: \.self) { _ in
@@ -208,10 +240,12 @@ struct SocialProofStep: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(RoundedRectangle(cornerRadius: Theme.Radius.card).fill(Theme.Colors.surface))
                     .themedCardShadow()
+                    .revealed(after: Theme.Motion.stagger * Double(index + 1))
                 }
 
                 PillButton(title: "continue") { viewModel.advance() }
                     .padding(.top, Theme.Spacing.s)
+                    .revealed(after: Theme.Motion.stagger * Double(reviews.count + 1))
             }
             .padding(Theme.Spacing.xl)
         }
@@ -236,8 +270,9 @@ struct FeatureRevealStep: View {
                     .font(Theme.Typography.stepTitle).themedDisplay()
                     .foregroundStyle(Theme.Colors.foreground)
                     .padding(.top, Theme.Spacing.xl)
+                    .revealed()
 
-                ForEach(features, id: \.1) { feature in
+                ForEach(Array(features.enumerated()), id: \.element.1) { index, feature in
                     HStack(spacing: Theme.Spacing.m) {
                         Image(systemName: feature.0)
                             .font(Theme.Icon.feature())
@@ -255,10 +290,12 @@ struct FeatureRevealStep: View {
                     .padding(Theme.Spacing.m)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(RoundedRectangle(cornerRadius: Theme.Radius.card).fill(Theme.Colors.surface))
+                    .revealed(after: Theme.Motion.stagger * Double(index + 1))
                 }
 
                 PillButton(title: "continue") { viewModel.advance() }
                     .padding(.top, Theme.Spacing.s)
+                    .revealed(after: Theme.Motion.stagger * Double(features.count + 1))
             }
             .padding(Theme.Spacing.xl)
         }

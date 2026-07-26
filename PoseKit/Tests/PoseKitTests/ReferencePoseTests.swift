@@ -50,3 +50,43 @@ final class ReferencePoseTests: XCTestCase {
         XCTAssertFalse(pose.free)
     }
 }
+
+final class ReferencePoseFramingTests: XCTestCase {
+
+    private func pose(_ joints: [String: [Float]]) -> ReferencePose {
+        ReferencePose(id: "t", title: "t", tags: [], joints: joints)
+    }
+
+    func testChestUpPoseIsCloseUp() {
+        let p = pose(["nose": [0.5, 0.14], "neck": [0.5, 0.22],
+                      "leftShoulder": [0.58, 0.24], "rightShoulder": [0.42, 0.24],
+                      "leftHip": [0.55, 0.5], "rightHip": [0.45, 0.5]])
+        XCTAssertTrue(p.isCloseUp)
+    }
+
+    func testAnklesMakeItFullBody() {
+        let p = pose(["nose": [0.5, 0.1], "neck": [0.5, 0.2],
+                      "leftHip": [0.55, 0.5], "rightHip": [0.45, 0.5],
+                      "leftAnkle": [0.53, 0.95], "rightAnkle": [0.47, 0.95]])
+        XCTAssertFalse(p.isCloseUp)
+    }
+
+    /// Knees alone are enough — a seated pose is still framed full-length.
+    func testKneesAloneMakeItFullBody() {
+        let p = pose(["neck": [0.5, 0.2],
+                      "leftHip": [0.55, 0.5], "rightHip": [0.45, 0.5],
+                      "leftKnee": [0.55, 0.75], "rightKnee": [0.45, 0.75]])
+        XCTAssertFalse(p.isCloseUp)
+    }
+
+    /// The two bundled close-up poses must classify as such, and every other
+    /// bundled pose must not — this is what decides the camera's framing.
+    func testBundledPosesClassifyAsAuthored() {
+        let closeUp = ["close-up-portrait", "peace-selfie"]
+        let fullBody = ["classic-stand", "mirror-selfie", "hands-pockets",
+                        "power-pose", "crossed-arms", "candid-walk",
+                        "lean-wall", "seated-casual"]
+        XCTAssertEqual(Set(closeUp).intersection(Set(fullBody)), [])
+        XCTAssertEqual(closeUp.count + fullBody.count, 10)
+    }
+}

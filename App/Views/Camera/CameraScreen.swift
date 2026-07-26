@@ -93,6 +93,15 @@ struct CameraScreen: View {
                         .transition(.opacity.combined(with: .scale(scale: 0.96)))
                 }
 
+                if viewModel.showsDiagnostics, let d = viewModel.diagnostics {
+                    VStack {
+                        Spacer()
+                        diagnosticsPanel(d)
+                            .padding(.bottom, 180)
+                    }
+                    .allowsHitTesting(false)
+                }
+
                 if viewModel.permissionDenied {
                     permissionDeniedView
                         .transition(.opacity)
@@ -100,12 +109,19 @@ struct CameraScreen: View {
             }
             .animation(Theme.Motion.spring, value: isSearchingForBody)
             .task {
+                // Holding a pose is not screen interaction, so iOS dims and
+                // sleeps mid-shot — worst exactly in hands-free, where the user
+                // is across the room and has to walk back to wake the phone.
+                UIApplication.shared.isIdleTimerDisabled = true
                 await viewModel.start(viewSize: geo.size)
             }
             .onChange(of: geo.size) { _, newSize in
                 viewModel.updateViewSize(newSize)
             }
-            .onDisappear { viewModel.stop() }
+            .onDisappear {
+                UIApplication.shared.isIdleTimerDisabled = false
+                viewModel.stop()
+            }
         }
         .navigationBarBackButtonHidden(true)
         .statusBarHidden(true)
@@ -141,6 +157,13 @@ struct CameraScreen: View {
                                 : AnyShapeStyle(.ultraThinMaterial), in: Capsule())
                     .overlay(Capsule().strokeBorder(Theme.Colors.hairline, lineWidth: 1))
                     .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                    // Hidden calibration handle. The hold thresholds were chosen
+                    // analytically before this app had run on hardware; a triple
+                    // tap exposes the live numbers so they can be set from
+                    // measurement rather than guessed a second time.
+                    .onTapGesture(count: 3) {
+                        viewModel.showsDiagnostics.toggle()
+                    }
             }
 
             Spacer()
@@ -177,6 +200,38 @@ struct CameraScreen: View {
         }
         .animation(Theme.Motion.spring, value: viewModel.readiness)
     }
+
+    /// Calibration readout. Shows both halves of the `hold` gate and which one
+    /// is blocking, so the thresholds can be set from what the device actually
+    /// reports while a person holds a pose they consider correct.
+    private func diagnosticsPanel(_ d: CameraViewModel.ScoreDiagnostics) -> some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
+            row("overall", d.overall, needs: ReadinessThresholds.holdOverall, ok: d.passesOverall)
+            row("worst limb", d.worstLimb, needs: ReadinessThresholds.holdWorstLimb, ok: d.passesWorstLimb)
+            Text("procrustes \(fmt(d.procrustes))   limbs \(fmt(d.limbMean))")
+                .font(Theme.Typography.caption)
+                .foregroundStyle(Theme.Colors.secondary)
+            Text("worst: \(d.worstName)")
+                .font(Theme.Typography.caption)
+                .foregroundStyle(Theme.Colors.secondary)
+        }
+        .padding(Theme.Spacing.m)
+        .themedHUD(RoundedRectangle(cornerRadius: Theme.Radius.card))
+    }
+
+    private func row(_ label: String, _ value: Float,
+                     needs: Float, ok: Bool) -> some View {
+        HStack(spacing: Theme.Spacing.s) {
+            Text(ok ? "PASS" : "FAIL")
+                .font(Theme.Typography.caption).monospaced()
+                .foregroundStyle(ok ? Theme.Colors.accent : Theme.Colors.secondary)
+            Text("\(label) \(fmt(value)) / \(fmt(needs))")
+                .font(Theme.Typography.caption).monospaced()
+                .foregroundStyle(Theme.Colors.foreground)
+        }
+    }
+
+    private func fmt(_ v: Float) -> String { String(format: "%.2f", v) }
 
     /// Shown while no body is tracked. Deliberately calm and centered — it is a
     /// state of the app, not a coaching correction, so it gets its own moment
